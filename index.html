@@ -47,6 +47,10 @@ button,select,input,textarea{font:inherit;color:inherit}
 input[type=date],select,input[type=text],input[type=password],input[type=search],textarea{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 10px}
 .notice{margin:16px 0 0;padding:10px 14px;border-radius:var(--r);background:var(--sunk);color:var(--muted);font-size:.88rem}
 .notice.err{color:var(--down)}
+body.loading header.top::after{content:"";position:absolute;left:0;bottom:-1px;height:2px;width:30%;background:var(--accent);animation:ld 1.1s ease-in-out infinite}
+header.top{position:sticky}
+@keyframes ld{0%{left:-30%}100%{left:100%}}
+@media (prefers-reduced-motion:reduce){body.loading header.top::after{animation:none;width:100%;opacity:.5}}
 .dateline{margin:22px 0 6px;color:var(--muted);font-size:.85rem;letter-spacing:.06em;text-transform:uppercase}
 /* tổng quan */
 .overview{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px 22px;display:grid;grid-template-columns:1.5fr 1fr;gap:20px}
@@ -312,18 +316,39 @@ async function api(params){
   const u = new URL(API_URL);
   Object.entries(params).forEach(([k,v]) => u.searchParams.set(k, v));
   if (READ_KEY) u.searchParams.set('key', READ_KEY);
-  const r = await fetch(u.toString());
-  const j = await r.json();
-  if (j.error) throw new Error(j.error);
-  return j;
+  let last;
+  for (let i = 0; i < 2; i++){                       // Apps Script đôi khi khởi động chậm → thử lại 1 lần
+    try {
+      const r = await fetch(u.toString());
+      const j = await r.json();
+      if (j.error) throw new Error(j.error);
+      return j;
+    } catch(e){ last = e; }
+  }
+  throw last;
+}
+const cache = {
+  get(k){ try { return JSON.parse(localStorage.getItem('newshub_' + k) || 'null'); } catch(e){ return null; } },
+  set(k, v){ try { localStorage.setItem('newshub_' + k, JSON.stringify(v)); } catch(e){} }
+};
+function busy(on){
+  document.body.classList.toggle('loading', on);
+  ['prev','next','latest','datePick'].forEach(id => { if (on) $(id).disabled = true; });
 }
 
 async function init(){
   if (DEMO) notice('Đang xem dữ liệu mẫu. Điền API_URL trong index.html để nối với Google Sheet của bạn. Link trong bản mẫu chỉ trỏ tới trang chủ các báo.');
+  // Hiện ngay bản đã xem lần trước (nếu có) trong lúc chờ máy chủ trả lời
+  const lastDay = cache.get('last');
+  if (lastDay && lastDay.date){ state.date = lastDay.date; state.data = lastDay; $('dateline').textContent = 'Bản tin ' + viDate(lastDay.date); render(lastDay); }
+  busy(true);
+  if (!DEMO) notice('Đang tải bản tin mới nhất…');
   try {
     const j = await api({ action: 'dates' });
-    state.dates = j.dates || [];
-  } catch(e){ notice('Không tải được danh sách ngày: ' + e.message, true); return; }
+    state.dates = (j.dates || []).map(d => String(d).trim().slice(0, 10)).filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d));
+  } catch(e){ busy(false); notice('Không tải được danh sách ngày (máy chủ phản hồi chậm). Tải lại trang sau ít phút. Chi tiết: ' + e.message, true); return; }
+  busy(false); $('datePick').disabled = false;
+  state.ready = true;
   if (!state.dates.length){ notice('Chưa có bản tin nào. Kiểm tra Spark đã ghi P2 và script đã nạp (tab Ingest_Log).'); return; }
   const dp = $('datePick');
   dp.max = state.dates[0]; dp.min = state.dates[state.dates.length - 1];
@@ -334,6 +359,7 @@ async function init(){
 }
 
 async function load(date){
+  if (!state.ready || !date) return;
   state.date = date; $('datePick').value = date;
   const i = state.dates.indexOf(date);
   $('prev').disabled = i < 0 ? !state.dates.some(d => d < date) : i >= state.dates.length - 1;
@@ -345,12 +371,19 @@ async function load(date){
     notice('Không có bản tin ngày ' + date.split('-').reverse().join('/') + ' (ngày nghỉ hoặc chưa chạy).');
     return;
   }
-  if (!DEMO) notice('');
+  const cached = cache.get('day_' + date);
+  if (cached){ state.data = cached; render(cached); }
+  if (!DEMO) notice(cached ? '' : 'Đang tải bản tin…');
+  document.body.classList.add('loading');
   try {
     const d = await api({ action: 'day', date });
-    state.data = d; render(d);
+    if (state.date !== date) return;                 // người dùng đã chuyển sang ngày khác
+    state.data = d; render(d); notice('');
+    cache.set('day_' + date, d);
+    if (date === state.dates[0]) cache.set('last', d);
     try { history.replaceState(null, '', '#' + date); } catch(e){}
-  } catch(e){ notice('Không tải được bản tin: ' + e.message, true); }
+  } catch(e){ if (!cached) notice('Không tải được bản tin: ' + e.message, true); }
+  finally { document.body.classList.remove('loading'); }
 }
 
 function render(d){
