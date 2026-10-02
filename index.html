@@ -74,19 +74,37 @@ table.cs tr.na td{color:var(--muted)}
 .chg.up{color:var(--up)}.chg.down{color:var(--down)}
 .tag{display:inline-block;font-size:.7rem;font-weight:700;letter-spacing:.06em;padding:1px 7px;border-radius:999px}
 .tag.CK{background:var(--ck-soft);color:var(--ck)}.tag.MB{background:var(--mb-soft);color:var(--mb)}
+/* tab */
+.tabs{display:flex;gap:6px;margin-top:22px;border-bottom:1px solid var(--line);position:sticky;top:calc(env(safe-area-inset-top,0px) + var(--hh,56px));z-index:4;background:var(--bg)}
+.tab{flex:1;max-width:240px;border:1px solid transparent;border-bottom:0;background:transparent;padding:10px 14px;min-height:44px;border-radius:10px 10px 0 0;font-weight:700;font-size:1rem;color:var(--muted);cursor:pointer;margin-bottom:-1px}
+.tab[aria-selected="true"]{background:var(--surface);border-color:var(--line);color:var(--k);border-top:3px solid var(--k)}
+.tab.CK{--k:var(--ck)}.tab.MB{--k:var(--mb)}
+.tcount{font-weight:500;font-size:.78rem;color:var(--muted)}
+.blk{margin-top:18px}
+.blk-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.blk-head h3{font:700 1.08rem var(--f-display);margin:0;color:var(--k)}
+.blk-head .doc{font-size:.85rem}
+.rep{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:4px 18px 10px}
 /* khối tin */
-.toolbar{display:flex;gap:10px;align-items:center;margin:26px 0 0;flex-wrap:wrap}
+.toolbar{display:flex;gap:10px;align-items:center;margin:8px 0 0;flex-wrap:wrap}
 .toolbar input{flex:1;min-width:0;max-width:360px}
 .toolbar .count{color:var(--muted);font-size:.85rem}
 section.khoi{margin-top:22px}
-.khoi-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;border-bottom:2px solid var(--k);padding-bottom:6px}
+.khoi-head{display:none;align-items:baseline;gap:12px;flex-wrap:wrap;border-bottom:2px solid var(--k);padding-bottom:6px}
 .khoi-head h2{font:700 1.3rem/1.2 var(--f-display);margin:0;color:var(--k)}
 .khoi-head .sub{color:var(--muted);font-size:.85rem}
 section.CK{--k:var(--ck);--ks:var(--ck-soft)} section.MB{--k:var(--mb);--ks:var(--mb-soft)}
-.khoi-sum{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:12px 0 4px;font-size:.92rem}
+.khoi-sum{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:16px 0 4px;font-size:.93rem;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 18px}
 .khoi-sum>div{min-width:0}
-.group{margin-top:14px}
-.group h3{font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--k);margin:0 0 2px;font-weight:700}
+.groups{margin-top:12px;display:grid;gap:8px}
+details.group{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--k);border-radius:8px}
+details.group>summary{padding:10px 14px;min-height:44px;font-weight:600}
+details.group>summary .gname{color:var(--k);font-size:.82rem;letter-spacing:.06em;text-transform:uppercase;font-weight:700;flex:none}
+details.group>summary .gprev{flex:1;min-width:0;color:var(--muted);font-weight:400;font-size:.86rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+details.group>summary .gcount{flex:none;margin-left:auto;color:var(--muted);font-weight:500;font-size:.8rem}
+details.group[open]>summary .gprev{visibility:hidden}
+details.group ol.news{padding:0 14px 6px}
+.toggle-all{margin-left:auto}
 ol.news{list-style:none;margin:0;padding:0}
 ol.news li{display:grid;grid-template-columns:1fr auto;gap:4px 14px;padding:10px 0;border-top:1px solid var(--line)}
 ol.news li:first-child{border-top:0}
@@ -95,7 +113,7 @@ ol.news .t:hover{color:var(--accent);text-decoration:underline}
 ol.news .s{grid-column:1;color:var(--fg);opacity:.86;font-size:.9rem;margin:0}
 ol.news .meta{grid-column:1;color:var(--muted);font-size:.78rem}
 ol.news .act{grid-row:1/span 3;grid-column:2;align-self:start}
-.mini{border:1px solid transparent;background:transparent;color:var(--muted);border-radius:6px;padding:2px 8px;font-size:.78rem;cursor:pointer}
+.mini{border:1px solid transparent;background:transparent;color:var(--muted);border-radius:6px;padding:4px 10px;min-height:32px;font-size:.8rem;cursor:pointer}
 .mini:hover{border-color:var(--line);color:var(--accent)}
 .empty{color:var(--muted);font-style:italic;padding:8px 0}
 /* báo cáo */
@@ -105,8 +123,22 @@ details.rep.CK{--k:var(--ck)}details.rep.MB{--k:var(--mb)}
 details.rep>summary{padding:14px 18px;font:700 1.05rem/1.3 var(--f-display)}
 .rep-body{padding:0 22px 20px;max-width:none}
 .rep-body .doc{font:500 .85rem var(--f-body);display:inline-block;margin-bottom:8px}
-.rep-body.md h3{font:700 1.15rem var(--f-display);margin:1.2em 0 .3em;color:var(--k)}
-.rep-body.md h4{font-size:1rem;margin:1em 0 .2em}
+.rep-body h3.grp{font:700 1.1rem var(--f-display);margin:1.1em 0 .4em;color:var(--k)}
+details.sec{border-top:1px solid var(--line)}
+details.sec:last-child{border-bottom:1px solid var(--line)}
+details.sec>summary{display:grid;grid-template-columns:1fr auto;gap:2px 12px;padding:12px 2px;min-height:44px;align-items:start}
+details.sec>summary::after{grid-column:2;grid-row:1}
+details.sec>summary .sh{font-weight:700;font-size:.74rem;letter-spacing:.07em;text-transform:uppercase;color:var(--k)}
+details.sec[open]>summary .thesis{display:none}
+details.sec>summary .thesis{display:grid;gap:4px;grid-column:1;font-weight:650;color:var(--fg);font-size:.97rem;line-height:1.45}
+details.sec>.md{padding:0 2px 12px}
+details.sec .md p strong:only-child{display:block;margin-top:.6em}
+details.sec .md li{margin:.4em 0}
+.sig{display:inline-block;font-size:.72rem;font-weight:700;padding:1px 8px;border-radius:999px;margin-right:6px;vertical-align:1px}
+.sig.pos{background:color-mix(in srgb,var(--up) 18%,transparent);color:var(--up)}
+.sig.neg{background:color-mix(in srgb,var(--down) 18%,transparent);color:var(--down)}
+.sig.neu{background:var(--sunk);color:var(--muted)}
+.rep-tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
 .rep-body.md{line-height:1.65;overflow-wrap:anywhere}
 .rep-body.md table{border-collapse:collapse;display:block;overflow-x:auto}
 .rep-body.md td,.rep-body.md th{border:1px solid var(--line);padding:4px 8px}
@@ -131,7 +163,22 @@ footer{color:var(--muted);font-size:.8rem;margin-top:28px}
   .khoi-sum{grid-template-columns:1fr}
   ol.news li{grid-template-columns:1fr}
   ol.news .act{grid-row:auto;grid-column:1;justify-self:start}
-  .rep-body{padding:0 16px 16px}
+  .rep-body{padding:0 14px 14px}
+  details.group>summary .gprev{display:none}
+}
+@media (max-width:560px){
+  body{font-size:15.5px}
+  .bar{padding:8px 12px;gap:8px}
+  .brand span{display:none}
+  .brand h1{font-size:1.15rem}
+  .datebox{flex:1;justify-content:flex-end;gap:4px;flex-wrap:nowrap}
+  #latest{padding:6px 8px;font-size:.85rem}
+  input[type=date]{max-width:132px;padding:6px}
+  .datebox .btn{padding:6px 10px;min-height:38px}
+  input[type=date]{min-height:38px;max-width:150px}
+  .overview h2{font-size:1.25rem}
+  .wrap{padding-inline:12px}
+  .toolbar input{max-width:none;flex-basis:100%}
 }
 @media (prefers-reduced-motion:no-preference){ol.news li{transition:background .15s}}
 </style>
@@ -165,23 +212,13 @@ footer{color:var(--muted);font-size:.8rem;margin-top:28px}
     </div>
   </section>
 
-  <details class="ind" id="indBox">
-    <summary><span>Chỉ số ngày</span><span class="ref" id="indCount"></span></summary>
-    <div class="scroll"><table class="cs" id="indTable"></table></div>
-  </details>
-
-  <div class="toolbar">
-    <input type="search" id="q" placeholder="Lọc tin theo từ khóa, mã CP, nguồn…" aria-label="Lọc tin">
-    <span class="count" id="qCount"></span>
+  <div class="tabs" role="tablist" aria-label="Chọn khối">
+    <button class="tab CK" role="tab" id="tab-CK" aria-controls="secCK" aria-selected="true" type="button" data-k="CK">Chứng khoán <span class="tcount" id="cntCK"></span></button>
+    <button class="tab MB" role="tab" id="tab-MB" aria-controls="secMB" aria-selected="false" type="button" data-k="MB">MB ngành <span class="tcount" id="cntMB"></span></button>
   </div>
 
-  <section class="khoi CK" id="secCK"></section>
-  <section class="khoi MB" id="secMB"></section>
-
-  <div class="reports">
-    <details class="rep CK" id="repCK"><summary>Báo cáo chi tiết · Chứng khoán daily</summary><div class="rep-body md"></div></details>
-    <details class="rep MB" id="repMB"><summary>Báo cáo chi tiết · MB ngành daily</summary><div class="rep-body md"></div></details>
-  </div>
+  <section class="khoi CK" id="secCK" role="tabpanel" aria-labelledby="tab-CK"></section>
+  <section class="khoi MB" id="secMB" role="tabpanel" aria-labelledby="tab-MB" hidden></section>
 
   <section class="comments" aria-labelledby="cmh">
     <h2 id="cmh">Góp ý cho bản tin</h2>
@@ -308,58 +345,107 @@ async function load(date){
 function render(d){
   setMd($('ovSum'), d.chung && d.chung.tom_tat, 'Chưa có tóm tắt.');
   setMd($('ovAssess'), d.chung && d.chung.danh_gia, 'Chưa có đánh giá.');
-  renderIndicators(d.chi_so || []);
-  renderKhoi('CK', 'Chứng khoán', d.ck || {});
-  renderKhoi('MB', 'MB ngành', d.mb || {});
-  renderReport('CK', d.ck || {});
-  renderReport('MB', d.mb || {});
+  renderKhoi('CK', d.ck || {}, d.chi_so || []);
+  renderKhoi('MB', d.mb || {}, d.chi_so || []);
   renderComments(d.nhan_xet || []);
-  applyFilter();
 }
 
 function chgClass(s){ s = String(s||'').trim(); if (/^\+/.test(s) || /tăng/i.test(s)) return 'up'; if (/^[-−]/.test(s) || /giảm/i.test(s)) return 'down'; return ''; }
-function renderIndicators(rows){
-  const t = $('indTable');
+function indicatorsHtml(rows){
   const have = rows.filter(r => r.trang_thai !== 'N/A');
-  $('indCount').textContent = rows.length ? have.length + '/' + rows.length + ' có số liệu' : 'chưa có';
-  if (!rows.length){ t.innerHTML = '<tr><td class="empty">Chưa có chỉ số cho ngày này.</td></tr>'; return; }
-  rows = rows.slice().sort((a,b) => (a.khoi+a.nhom).localeCompare(b.khoi+b.nhom) || (a.trang_thai==='N/A') - (b.trang_thai==='N/A'));
-  t.innerHTML = '<thead><tr><th></th><th>Chỉ số</th><th style="text-align:right">Giá trị</th><th>Đơn vị</th><th>Thay đổi</th><th>Mốc số liệu</th><th>Nguồn</th></tr></thead><tbody>' +
+  if (!rows.length) return '';
+  rows = rows.slice().sort((a,b) => String(a.nhom).localeCompare(String(b.nhom)) || (a.trang_thai==='N/A') - (b.trang_thai==='N/A'));
+  return '<details class="ind blk"><summary><span>Chỉ số ngày</span><span class="ref">' + have.length + '/' + rows.length + ' có số liệu</span></summary>' +
+    '<div class="scroll"><table class="cs"><thead><tr><th>Chỉ số</th><th style="text-align:right">Giá trị</th><th>Đơn vị</th><th>Thay đổi</th><th>Mốc số liệu</th><th>Nguồn</th></tr></thead><tbody>' +
     rows.map(r => {
       const na = r.trang_thai === 'N/A';
-      return '<tr class="' + (na ? 'na' : '') + '"><td><span class="tag ' + esc(r.khoi) + '">' + esc(r.khoi) + '</span></td><td>' + esc(r.ten) + '</td>' +
+      return '<tr class="' + (na ? 'na' : '') + '"><td>' + esc(r.ten) + '</td>' +
         '<td class="v">' + (na ? '—' : esc(r.gia_tri)) + '</td><td>' + esc(na ? '' : r.don_vi) + '</td>' +
         '<td class="chg ' + chgClass(r.thay_doi) + '">' + esc(r.thay_doi) + '</td><td>' + esc(r.moc) + '</td>' +
         '<td>' + (r.url ? '<a href="' + esc(r.url) + '" target="_blank" rel="noopener">mở</a>' + (r.trang_thai === 'chua_xac_minh' ? ' <span title="Trang chặn kiểm tra tự động">·?</span>' : '') : '') + '</td></tr>';
-    }).join('') + '</tbody>';
+    }).join('') + '</tbody></table></div></details>';
 }
 
-function renderKhoi(k, name, x){
+/* Một tab = 1 khối: tóm tắt & đánh giá → báo cáo chi tiết → chỉ số → danh sách tin (thu gọn theo nhóm) */
+function renderKhoi(k, x, chiSo){
   const sec = $('sec' + k);
   const tin = (x.tin || []).slice().sort((a,b) => a.thu_tu - b.thu_tu);
   const groups = [];
   tin.forEach(t => { let g = groups.find(g => g.n === (t.nhom || 'Khác')); if (!g) groups.push(g = { n: t.nhom || 'Khác', items: [] }); g.items.push(t); });
+  $('cnt' + k).textContent = tin.length ? '· ' + tin.length + ' tin' : '';
   sec.innerHTML =
-    '<div class="khoi-head"><h2>' + esc(name) + '</h2><span class="sub">' + tin.length + ' tin · ' + groups.length + ' nhóm</span></div>' +
     '<div class="khoi-sum"><div><p class="label">Tóm tắt</p><div class="md" data-f="tt"></div></div><div><p class="label">Đánh giá</p><div class="md" data-f="dg"></div></div></div>' +
-    (groups.length ? groups.map(g =>
-      '<div class="group"><h3>' + esc(g.n) + '</h3><ol class="news">' + g.items.map(t =>
+    '<div class="blk"><div class="blk-head"><h3>Báo cáo chi tiết</h3>' +
+      (x.link_doc ? '<a class="doc" href="' + esc(x.link_doc) + '" target="_blank" rel="noopener">Google Docs ↗</a>' : '') +
+      (x.bao_cao_md ? '<button class="mini toggle-all" type="button" data-scope="rep' + k + '">Mở tất cả</button>' : '') +
+    '</div><div class="rep" id="rep' + k + '"></div></div>' +
+    indicatorsHtml(chiSo.filter(r => r.khoi === k)) +
+    '<div class="blk"><div class="blk-head"><h3>Tin trong ngày</h3><span class="ref">' + tin.length + ' tin · ' + groups.length + ' nhóm</span>' +
+      (groups.length ? '<button class="mini toggle-all" type="button" data-scope="list' + k + '">Mở tất cả</button>' : '') + '</div>' +
+    '<div class="toolbar"><input type="search" class="q" data-k="' + k + '" placeholder="Lọc tin theo từ khóa, mã CP, nguồn…" aria-label="Lọc tin"><span class="count"></span></div>' +
+    '<div id="list' + k + '">' +
+    (groups.length ? '<div class="groups">' + groups.map(g =>
+      '<details class="group"><summary><span class="gname">' + esc(g.n) + '</span><span class="gprev">' + esc(g.items[0].tieu_de) + '</span><span class="gcount">' + g.items.length + ' tin</span></summary><ol class="news">' + g.items.map(t =>
         '<li data-s="' + esc((t.tieu_de + ' ' + t.tom_tat + ' ' + t.nguon + ' ' + g.n).toLowerCase()) + '">' +
         '<a class="t" href="' + esc(t.url) + '" target="_blank" rel="noopener">' + esc(t.tieu_de) + '</a>' +
         '<p class="s">' + esc(t.tom_tat) + '</p>' +
         '<span class="meta">' + esc(t.nguon) + (t.pub ? ' · ' + esc(t.pub) : '') + '</span>' +
         '<span class="act"><button class="mini" type="button" data-k="' + k + '" data-id="' + esc(t.id) + '" data-t="' + esc(t.tieu_de) + '">Góp ý</button></span>' +
-        '</li>').join('') + '</ol></div>').join('')
-      : '<p class="empty">Chưa có danh sách tin.</p>');
+        '</li>').join('') + '</ol></details>').join('') + '</div>'
+      : '<p class="empty">Chưa có danh sách tin.</p>') + '</div></div>';
   setMd(sec.querySelector('[data-f="tt"]'), x.tom_tat, 'Chưa có.');
   setMd(sec.querySelector('[data-f="dg"]'), x.danh_gia, 'Chưa có.');
+  renderReport(k, x);
 }
 
+/* Báo cáo chi tiết: mỗi mục lá (Điện, Than, 1. Thị trường…) là một ô xổ xuống.
+   Tiêu đề ô = tên mục + các câu luận điểm (đoạn in đậm cả câu) → đọc lướt không cần mở.
+   Một mục có thể có nhiều luận điểm: hiện tất cả khi đóng; khi mở thì đọc đầy đủ theo thứ tự. */
+const CITE_RE = /\[\(\d+\)\]\([^)]*\)/g;
+function thesisOf(line){
+  if (/^\s*[-*•]\s/.test(line)) return '';
+  const m = /^\s*\*\*(.+?)\*\*\s*([.:]?)\s*(.*)$/.exec(line);
+  if (!m || m[3].replace(CITE_RE, '').trim().length > 4) return '';
+  return (m[1].replace(/^Luận điểm\s*\d*\s*:\s*/i, '') + m[2]).replace(CITE_RE, '').trim();
+}
+function reportHtml(src){
+  const lines = String(src || '').replace(/\r/g, '').split('\n');
+  const heads = [];
+  lines.forEach((l, i) => { const h = /^(#{1,4})\s+(.*)$/.exec(l); if (h) heads.push({ i, lv: h[1].length, t: h[2].replace(/\*\*/g, '').trim() }); });
+  if (!heads.length) return md(src);
+  let html = md(lines.slice(0, heads[0].i).join('\n'));
+  heads.forEach((h, k) => {
+    const end = k + 1 < heads.length ? heads[k + 1].i : lines.length;
+    const leaf = !(k + 1 < heads.length && heads[k + 1].lv > h.lv);
+    const body = lines.slice(h.i + 1, end);
+    if (!leaf){ html += '<h3 class="grp">' + inline(h.t) + '</h3>' + md(body.join('\n')); return; }
+    const theses = body.map(thesisOf).filter(Boolean);
+    const isSig = /tín hiệu rủi ro/i.test(h.t);
+    html += '<details class="sec"' + (isSig ? ' open' : '') + '><summary><span class="sh">' + inline(h.t) + '</span>' +
+      (theses.length ? '<span class="thesis">' + theses.map(t => '<span>' + inline(t) + '</span>').join('') + '</span>' : '') +
+      '</summary><div class="md">' + md(body.join('\n')) + '</div></details>';
+  });
+  return html;
+}
+function markSignals(root){
+  root.querySelectorAll('li').forEach(li => {
+    const m = /^([^:]{2,40}):\s*(Tích cực|Trung tính|Tiêu cực|Chưa đủ dữ liệu)/i.exec(li.textContent);
+    if (!m) return;
+    const v = m[2].toLowerCase(), cls = v.startsWith('tích') ? 'pos' : v.startsWith('tiêu') ? 'neg' : 'neu';
+    li.innerHTML = '<span class="sig ' + cls + '">' + esc(m[2]) + '</span>' + li.innerHTML.replace(new RegExp('\\s*' + m[2] + '\\s*[—–-]?\\s*'), ' ');
+  });
+}
 function renderReport(k, x){
-  const body = $('rep' + k).querySelector('.rep-body');
-  const link = x.link_doc ? '<a class="doc" href="' + esc(x.link_doc) + '" target="_blank" rel="noopener">Mở bản Google Docs ↗</a>' : '';
-  setMd(body, x.bao_cao_md, 'Chưa có báo cáo cho ngày này.');
-  if (link) body.insertAdjacentHTML('afterbegin', link);
+  const body = $('rep' + k);
+  if (!x.bao_cao_md){ body.innerHTML = '<p class="empty">Chưa có báo cáo cho ngày này.</p>'; return; }
+  body.innerHTML = reportHtml(x.bao_cao_md);
+  body.querySelectorAll('a[href]').forEach(a => { a.target = '_blank'; a.rel = 'noopener'; if (/^\(\d+\)$/.test(a.textContent)) a.title = a.href; });
+  body.querySelectorAll('details.sec').forEach(d => { if (/tín hiệu rủi ro/i.test(d.querySelector('.sh').textContent)) markSignals(d); });
+}
+
+function showTab(k){
+  ['CK','MB'].forEach(x => { $('sec' + x).hidden = x !== k; $('tab-' + x).setAttribute('aria-selected', x === k ? 'true' : 'false'); });
+  store.set('newshub_tab', k);
 }
 
 function renderComments(list){
@@ -368,12 +454,12 @@ function renderComments(list){
     : '<li class="empty">Chưa có góp ý cho ngày này.</li>';
 }
 
-function applyFilter(){
-  const q = $('q').value.trim().toLowerCase();
+function applyFilter(inp){
+  const k = inp.dataset.k, q = inp.value.trim().toLowerCase(), box = $('list' + k);
   let shown = 0, total = 0;
-  document.querySelectorAll('ol.news li').forEach(li => { total++; const ok = !q || li.dataset.s.includes(q); li.hidden = !ok; if (ok) shown++; });
-  document.querySelectorAll('.group').forEach(g => { g.hidden = !g.querySelector('li:not([hidden])'); });
-  $('qCount').textContent = q ? shown + '/' + total + ' tin' : '';
+  box.querySelectorAll('ol.news li').forEach(li => { total++; const ok = !q || li.dataset.s.includes(q); li.hidden = !ok; if (ok) shown++; });
+  box.querySelectorAll('details.group').forEach(g => { const has = !!g.querySelector('li:not([hidden])'); g.hidden = !has; g.open = !!q && has; });
+  inp.nextElementSibling.textContent = q ? shown + '/' + total + ' tin' : '';
 }
 
 function setRef(k, id, title){
@@ -384,6 +470,15 @@ function setRef(k, id, title){
 }
 
 document.addEventListener('click', e => {
+  const tg = e.target.closest('button.toggle-all');
+  if (tg){
+    const scope = $(tg.dataset.scope);
+    const items = scope.querySelectorAll('details.group:not([hidden]), details.sec');
+    const open = tg.textContent === 'Mở tất cả';
+    items.forEach(d => { d.open = open; });
+    tg.textContent = open ? 'Thu gọn' : 'Mở tất cả';
+    return;
+  }
   const b = e.target.closest('button.mini[data-id]');
   if (!b) return;
   setRef(b.dataset.k, b.dataset.id, b.dataset.t);
@@ -418,7 +513,11 @@ $('cf').addEventListener('submit', async e => {
   finally { $('cSend').disabled = false; }
 });
 
-$('q').addEventListener('input', applyFilter);
+document.addEventListener('input', e => { if (e.target.matches('input.q')) applyFilter(e.target); });
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => showTab(t.dataset.k)));
+showTab(store.get('newshub_tab') === 'MB' ? 'MB' : 'CK');
+function setHeaderH(){ document.documentElement.style.setProperty('--hh', document.querySelector('header.top').offsetHeight + 'px'); }
+setHeaderH(); window.addEventListener('resize', setHeaderH);
 $('datePick').addEventListener('change', e => { if (e.target.value) load(e.target.value); });
 $('latest').addEventListener('click', () => load(state.dates[0]));
 $('prev').addEventListener('click', () => { const d = state.dates.find(x => x < state.date); if (d) load(d); });
@@ -444,7 +543,7 @@ const DEMO_DAY = {
   ck: {
     tom_tat: '- [MẪU] VN-Index đóng cửa phiên 01/10 tăng nhẹ, thanh khoản giảm [(1)](' + H.vst + ').\n- [MẪU] Hòa Phát (HPG) công bố khoản đầu tư mới [(2)](' + H.cafef + ').',
     danh_gia: '[MẪU] Dòng tiền thận trọng trước biến động lãi suất qua đêm; khối ngoại bán ròng phiên thứ 3 liên tiếp (bản tin 30/09).',
-    bao_cao_md: '## 1. Thị trường & dòng tiền\n- [MẪU] VN-Index đóng cửa 01/10/2026 ở mức minh họa [(1)](' + H.vst + ').\n## 2. Vĩ mô & tiền tệ\n- [MẪU] LS qua đêm tăng mạnh đầu quý [(2)](' + H.cafef + ').\n## 3. Ngành & doanh nghiệp\n### Doanh nghiệp\n- [MẪU] Hòa Phát (HPG) công bố khoản đầu tư mới [(2)](' + H.cafef + ').\n## 4. Sự kiện cần theo dõi\n- [MẪU] Diễn biến lãi suất liên ngân hàng các phiên tới.\n## 5. Chất lượng dữ liệu\n- Chỉ số LNG_JKM: N/A.\n\n## DANH MỤC NGUỒN TRÍCH DẪN\n- (1) Vietstock — Bài mẫu: ' + H.vst + '\n- (2) CafeF — Bài mẫu: ' + H.cafef,
+    bao_cao_md: '## 1. Thị trường & dòng tiền\n**[MẪU] Dòng tiền thận trọng: chỉ số tăng nhẹ nhưng thanh khoản thấp nhất 2 tuần.**\n- **Diễn biến:** VN-Index đóng cửa 01/10/2026 tăng nhẹ [(1)](' + H.vst + ').\n- **Giải thích:** nhà đầu tư chờ tín hiệu lãi suất liên ngân hàng.\n- **Minh chứng:** khối ngoại bán ròng phiên thứ 3 liên tiếp [(1)](' + H.vst + ').\n## 2. Vĩ mô & tiền tệ\n**[MẪU] Thanh khoản hệ thống căng ngắn hạn đầu quý 4.**\n- **Diễn biến:** LS qua đêm tăng mạnh [(2)](' + H.cafef + ').\n- **Theo dõi tiếp:** khối lượng OMO các phiên tới.\n## 3. Ngành & doanh nghiệp\n### Doanh nghiệp\n**[MẪU] HPG mở rộng chuỗi giá trị qua khoản đầu tư mới.**\n- **Diễn biến:** Hòa Phát (HPG) công bố khoản đầu tư mới [(2)](' + H.cafef + ').\n## 4. Sự kiện cần theo dõi\n- **Lãi suất liên ngân hàng:** diễn biến các phiên tới.\n## 5. Chất lượng dữ liệu\n- Chỉ số LNG_JKM: N/A.\n\n## DANH MỤC NGUỒN TRÍCH DẪN\n- (1) Vietstock — Bài mẫu: ' + H.vst + '\n- (2) CafeF — Bài mẫu: ' + H.cafef,
     link_doc: '',
     tin: [
       { nhom:'Thị trường chứng khoán', thu_tu:1, id:'nA1', tieu_de:'[MẪU] VN-Index giữ sắc xanh, thanh khoản thấp nhất 2 tuần', tom_tat:'VN-Index tăng nhẹ phiên 01/10/2026. Thanh khoản giảm cho thấy dòng tiền chờ tín hiệu lãi suất.', url:H.vst, nguon:'Vietstock', pub:'2026-10-01 15:40' },
@@ -455,7 +554,7 @@ const DEMO_DAY = {
   mb: {
     tom_tat: '- [MẪU] Điện khí LNG: phần lớn dự án trọng điểm có nguy cơ chậm tiến độ [(1)](' + H.chinhphu + ').\n- [MẪU] Phân bón: giá urê chào tăng [(2)](' + H.vneco + ').',
     danh_gia: '[MẪU] Rủi ro tiến độ ở Điện tăng; Phân bón cải thiện biên; các ngành còn lại trung tính.',
-    bao_cao_md: '## Cụm Năng lượng\n### Điện\n- **Diễn biến:** [MẪU] 18 dự án điện LNG, chỉ 1 dự án được đánh giá đáp ứng tiến độ [(1)](' + H.chinhphu + ').\n- **Tác động thẩm định:** Rủi ro chậm COD và chi phí vốn tăng cho các dự án điện khí đang chuẩn bị đầu tư.\n- **Kênh dẫn truyền:** 4. Chuỗi cung ứng, Hạ tầng & Rủi ro vận hành\n### Dầu thô\n- **Diễn biến:** [MẪU] Giá WTI giảm khi xuất khẩu của Ả-rập Saudi phục hồi [(2)](' + H.oil + ').\n- **Tác động thẩm định:** Chi phí đầu vào lọc dầu giảm, biên lọc dầu phụ thuộc crack spread.\n- **Kênh dẫn truyền:** 2. Chu kỳ, Cung - Cầu & Biên giá\n## Tín hiệu rủi ro ngành\n- Điện: Tiêu cực — rủi ro tiến độ dự án LNG.\n- Phân bón: Tích cực — giá bán tăng.\n- Các ngành khác: Trung tính.\n\n## DANH MỤC NGUỒN TRÍCH DẪN\n- (1) Báo Chính phủ — Bài mẫu: ' + H.chinhphu + '\n- (2) OilPrice — Bài mẫu: ' + H.oil,
+    bao_cao_md: '## Cụm Năng lượng\n### Điện\n**[MẪU] Rủi ro tiến độ nhóm điện khí LNG tăng: chỉ 1/18 dự án kịp tiến độ.**\n- **Diễn biến:** Bộ Công Thương đánh giá 18 dự án điện LNG, chỉ Hiệp Phước đáp ứng tiến độ [(1)](' + H.chinhphu + ').\n- **Giải thích:** dự án chưa chốt PPA và nguồn khí nên chưa đủ điều kiện giải ngân.\n- **Minh chứng:** 17/18 dự án chậm so với Quy hoạch điện VIII [(1)](' + H.chinhphu + ').\n- **Tác động thẩm định:** rủi ro chậm COD, chi phí lãi vay trong thời gian xây dựng tăng.\n- **Kênh dẫn truyền:** 1. Thể chế, Pháp lý & Địa chính trị\n- **Theo dõi tiếp:** tiến độ đàm phán PPA của từng dự án.\n### Dầu thô\n**[MẪU] Giá dầu giảm hỗ trợ chi phí đầu vào lọc dầu.**\n- **Diễn biến:** WTI giảm khi xuất khẩu Ả-rập Saudi phục hồi [(2)](' + H.oil + ').\n- **Tác động thẩm định:** nhu cầu vốn lưu động nhập dầu thô giảm.\n- **Kênh dẫn truyền:** 2. Chu kỳ, Cung - Cầu & Biên giá\n## Tín hiệu rủi ro ngành\n- Điện: Tiêu cực — rủi ro tiến độ dự án LNG.\n- Dầu thô: Trung tính — giá giảm, nguồn cung ổn định.\n- Phân bón: Tích cực — giá bán tăng.\n## Chất lượng dữ liệu\n- Không có.\n\n## DANH MỤC NGUỒN TRÍCH DẪN\n- (1) Báo Chính phủ — Bài mẫu: ' + H.chinhphu + '\n- (2) OilPrice — Bài mẫu: ' + H.oil,
     link_doc: '',
     tin: [
       { nhom:'Điện', thu_tu:1, id:'nB1', tieu_de:'[MẪU] 18 dự án điện LNG, chỉ Hiệp Phước có khả năng đáp ứng tiến độ', tom_tat:'Bộ Công Thương đánh giá tiến độ 18 dự án điện LNG trọng điểm. Rủi ro chậm COD tăng với các dự án chưa chốt nguồn khí và PPA.', url:H.chinhphu, nguon:'Báo Chính phủ', pub:'2026-10-01 18:00' },
