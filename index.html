@@ -76,15 +76,20 @@ table.cs tr.na td{color:var(--muted)}
 .tag.CK{background:var(--ck-soft);color:var(--ck)}.tag.MB{background:var(--mb-soft);color:var(--mb)}
 /* tab */
 .tabs{display:flex;gap:6px;margin-top:22px;border-bottom:1px solid var(--line);position:sticky;top:calc(env(safe-area-inset-top,0px) + var(--hh,56px));z-index:4;background:var(--bg)}
-.tab{flex:1;max-width:240px;border:1px solid transparent;border-bottom:0;background:transparent;padding:10px 14px;min-height:44px;border-radius:10px 10px 0 0;font-weight:700;font-size:1rem;color:var(--muted);cursor:pointer;margin-bottom:-1px}
+.tab{flex:1;max-width:260px;border:1px solid transparent;border-bottom:0;background:transparent;padding:12px 16px;min-height:48px;border-radius:10px 10px 0 0;font:700 1.12rem var(--f-display);color:var(--muted);cursor:pointer;margin-bottom:-1px}
 .tab[aria-selected="true"]{background:var(--surface);border-color:var(--line);color:var(--k);border-top:3px solid var(--k)}
 .tab.CK{--k:var(--ck)}.tab.MB{--k:var(--mb)}
 .tcount{font-weight:500;font-size:.78rem;color:var(--muted)}
-.blk{margin-top:18px}
-.blk-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}
-.blk-head h3{font:700 1.08rem var(--f-display);margin:0;color:var(--k)}
+/* Thang cấp bậc: L1 tab · L2 khối (Báo cáo chi tiết / Chỉ số / Tin) · L3 cụm · L4 ngành/mục · L5 nội dung */
+.blk{margin-top:34px}
+.blk-head{display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap;margin-bottom:12px;padding-left:12px;border-left:4px solid var(--k)}
+.blk-head h3{font:700 1.5rem/1.2 var(--f-display);margin:0;color:var(--fg);letter-spacing:-.01em}
 .blk-head .doc{font-size:.85rem}
-.rep{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:4px 18px 10px}
+.blk-head .ref{font-size:.85rem}
+.rep{display:grid;gap:14px}
+.cum{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.cum>h4.grp{margin:0;padding:12px 18px;font:700 1.12rem/1.3 var(--f-body);color:var(--k);background:color-mix(in srgb,var(--k) 8%,var(--surface));border-bottom:1px solid var(--line)}
+.cum>.md{padding:6px 18px}
 /* khối tin */
 .toolbar{display:flex;gap:10px;align-items:center;margin:8px 0 0;flex-wrap:wrap}
 .toolbar input{flex:1;min-width:0;max-width:360px}
@@ -94,7 +99,7 @@ section.khoi{margin-top:22px}
 .khoi-head h2{font:700 1.3rem/1.2 var(--f-display);margin:0;color:var(--k)}
 .khoi-head .sub{color:var(--muted);font-size:.85rem}
 section.CK{--k:var(--ck);--ks:var(--ck-soft)} section.MB{--k:var(--mb);--ks:var(--mb-soft)}
-.khoi-sum{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:16px 0 4px;font-size:.93rem;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 18px}
+.khoi-sum{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0 4px;font-size:.95rem;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 18px}
 .khoi-sum>div{min-width:0}
 .groups{margin-top:12px;display:grid;gap:8px}
 details.group{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--k);border-radius:8px}
@@ -123,17 +128,23 @@ details.rep.CK{--k:var(--ck)}details.rep.MB{--k:var(--mb)}
 details.rep>summary{padding:14px 18px;font:700 1.05rem/1.3 var(--f-display)}
 .rep-body{padding:0 22px 20px;max-width:none}
 .rep-body .doc{font:500 .85rem var(--f-body);display:inline-block;margin-bottom:8px}
-.rep-body h3.grp{font:700 1.1rem var(--f-display);margin:1.1em 0 .4em;color:var(--k)}
 details.sec{border-top:1px solid var(--line)}
-details.sec:last-child{border-bottom:1px solid var(--line)}
-details.sec>summary{display:grid;grid-template-columns:1fr auto;gap:2px 12px;padding:12px 2px;min-height:44px;align-items:start}
-details.sec>summary::after{grid-column:2;grid-row:1}
-details.sec>summary .sh{font-weight:700;font-size:.74rem;letter-spacing:.07em;text-transform:uppercase;color:var(--k)}
+.cum details.sec:first-of-type{border-top:0}
+.rep>details.sec{background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+details.sec>summary{display:grid;grid-template-columns:1fr auto;gap:6px 12px;padding:14px 18px;min-height:48px;align-items:start}
+details.sec>summary:hover{background:color-mix(in srgb,var(--k) 5%,transparent)}
+details.sec>summary::after{grid-column:2;grid-row:1;font-size:1.1rem;line-height:1.3}
+details.sec>summary .sh{font:650 1.05rem/1.35 var(--f-body);color:var(--fg)}
+details.sec[open]>summary .sh{color:var(--k)}
 details.sec[open]>summary .thesis{display:none}
-details.sec>summary .thesis{display:grid;gap:4px;grid-column:1;font-weight:650;color:var(--fg);font-size:.97rem;line-height:1.45}
-details.sec>.md{padding:0 2px 12px}
-details.sec .md p strong:only-child{display:block;margin-top:.6em}
-details.sec .md li{margin:.4em 0}
+details.sec>summary .thesis{display:grid;gap:6px;grid-column:1;font-weight:400;color:var(--muted);font-size:.93rem;line-height:1.5}
+details.sec>summary .thesis span{padding-left:12px;border-left:2px solid color-mix(in srgb,var(--k) 55%,transparent);color:var(--fg);font-weight:600}
+details.sec>.md{padding:0 18px 16px;font-size:.95rem;line-height:1.65}
+details.sec .md p strong:only-child{display:block;margin-top:.9em;padding:8px 12px;border-left:3px solid var(--k);background:color-mix(in srgb,var(--k) 7%,transparent);border-radius:0 6px 6px 0;font-size:1rem}
+details.sec .md p:first-child strong:only-child{margin-top:0}
+details.sec .md ul{margin:.5em 0 .2em;padding-left:1.3em}
+details.sec .md li{margin:.45em 0}
+details.sec .md li::marker{color:var(--k)}
 .sig{display:inline-block;font-size:.72rem;font-weight:700;padding:1px 8px;border-radius:999px;margin-right:6px;vertical-align:1px}
 .sig.pos{background:color-mix(in srgb,var(--up) 18%,transparent);color:var(--up)}
 .sig.neg{background:color-mix(in srgb,var(--down) 18%,transparent);color:var(--down)}
@@ -355,7 +366,8 @@ function indicatorsHtml(rows){
   const have = rows.filter(r => r.trang_thai !== 'N/A');
   if (!rows.length) return '';
   rows = rows.slice().sort((a,b) => String(a.nhom).localeCompare(String(b.nhom)) || (a.trang_thai==='N/A') - (b.trang_thai==='N/A'));
-  return '<details class="ind blk"><summary><span>Chỉ số ngày</span><span class="ref">' + have.length + '/' + rows.length + ' có số liệu</span></summary>' +
+  return '<div class="blk"><div class="blk-head"><h3>Chỉ số ngày</h3><span class="ref">' + have.length + '/' + rows.length + ' có số liệu</span></div>' +
+    '<details class="ind"><summary><span>Xem bảng chỉ số</span></summary>' +
     '<div class="scroll"><table class="cs"><thead><tr><th>Chỉ số</th><th style="text-align:right">Giá trị</th><th>Đơn vị</th><th>Thay đổi</th><th>Mốc số liệu</th><th>Nguồn</th></tr></thead><tbody>' +
     rows.map(r => {
       const na = r.trang_thai === 'N/A';
@@ -363,7 +375,7 @@ function indicatorsHtml(rows){
         '<td class="v">' + (na ? '—' : esc(r.gia_tri)) + '</td><td>' + esc(na ? '' : r.don_vi) + '</td>' +
         '<td class="chg ' + chgClass(r.thay_doi) + '">' + esc(r.thay_doi) + '</td><td>' + esc(r.moc) + '</td>' +
         '<td>' + (r.url ? '<a href="' + esc(r.url) + '" target="_blank" rel="noopener">mở</a>' + (r.trang_thai === 'chua_xac_minh' ? ' <span title="Trang chặn kiểm tra tự động">·?</span>' : '') : '') + '</td></tr>';
-    }).join('') + '</tbody></table></div></details>';
+    }).join('') + '</tbody></table></div></details></div>';
 }
 
 /* Một tab = 1 khối: tóm tắt & đánh giá → báo cáo chi tiết → chỉ số → danh sách tin (thu gọn theo nhóm) */
@@ -412,19 +424,27 @@ function reportHtml(src){
   const lines = String(src || '').replace(/\r/g, '').split('\n');
   const heads = [];
   lines.forEach((l, i) => { const h = /^(#{1,4})\s+(.*)$/.exec(l); if (h) heads.push({ i, lv: h[1].length, t: h[2].replace(/\*\*/g, '').trim() }); });
-  if (!heads.length) return md(src);
-  let html = md(lines.slice(0, heads[0].i).join('\n'));
+  if (!heads.length) return '<div class="cum"><div class="md">' + md(src) + '</div></div>';
+  let html = '';
+  const pre = lines.slice(0, heads[0].i).join('\n').trim();
+  if (pre) html += '<div class="cum"><div class="md">' + md(pre) + '</div></div>';
+  let cum = null;                                  // cụm đang mở (tiêu đề có mục con)
   heads.forEach((h, k) => {
     const end = k + 1 < heads.length ? heads[k + 1].i : lines.length;
     const leaf = !(k + 1 < heads.length && heads[k + 1].lv > h.lv);
     const body = lines.slice(h.i + 1, end);
-    if (!leaf){ html += '<h3 class="grp">' + inline(h.t) + '</h3>' + md(body.join('\n')); return; }
+    if (cum && h.lv <= cum.lv){ html += '</div>'; cum = null; }
+    if (!leaf){
+      html += '<div class="cum"><h4 class="grp">' + inline(h.t) + '</h4>' + (body.join('').trim() ? '<div class="md">' + md(body.join('\n')) + '</div>' : '');
+      cum = h; return;
+    }
     const theses = body.map(thesisOf).filter(Boolean);
     const isSig = /tín hiệu rủi ro/i.test(h.t);
     html += '<details class="sec"' + (isSig ? ' open' : '') + '><summary><span class="sh">' + inline(h.t) + '</span>' +
       (theses.length ? '<span class="thesis">' + theses.map(t => '<span>' + inline(t) + '</span>').join('') + '</span>' : '') +
       '</summary><div class="md">' + md(body.join('\n')) + '</div></details>';
   });
+  if (cum) html += '</div>';
   return html;
 }
 function markSignals(root){
