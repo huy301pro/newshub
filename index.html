@@ -306,9 +306,10 @@ footer{color:var(--muted);font-size:.8rem;margin-top:28px;display:flex;gap:10px;
         <span class="ref" id="cRef"></span>
       </div>
       <textarea id="cText" maxlength="2000" placeholder="Ví dụ: Thiếu tin ngành Than; tóm tắt tin Hòa Phát nên nêu sản lượng; số liệu urê lệch với nguồn…"></textarea>
+      <input type="text" id="cHp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px">
       <div class="row">
-        <label for="cKey">Khóa ghi</label>
-        <input type="password" id="cKey" placeholder="WRITE_KEY" autocomplete="off" size="12">
+        <span id="kRow" class="row" hidden><label for="cKey">Khóa ghi</label>
+        <input type="password" id="cKey" placeholder="WRITE_KEY" autocomplete="off" size="12"></span>
         <button class="btn primary" type="submit" id="cSend">Gửi góp ý</button>
         <span class="status" id="cStatus" role="status"></span>
       </div>
@@ -418,6 +419,8 @@ async function init(){
   if (!DEMO) notice('Đang tải bản tin mới nhất…');
   try {
     const j = await api({ action: 'dates' });
+    state.needWK = !!j.need_write_key;
+    $('kRow').hidden = !state.needWK;
     state.dates = (j.dates || []).map(d => String(d).trim().slice(0, 10)).filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d));
   } catch(e){
     busy(false);
@@ -644,8 +647,8 @@ $('cf').addEventListener('submit', async e => {
   const st = $('cStatus');
   const text = $('cText').value.trim(), key = $('cKey').value.trim();
   if (!text){ st.className = 'status err'; st.textContent = 'Viết nội dung góp ý trước khi gửi.'; return; }
-  if (!key && !DEMO){ st.className = 'status err'; st.textContent = 'Nhập khóa ghi (WRITE_KEY trong Script Properties).'; return; }
-  const payload = { key, date: state.date, khoi: $('cKhoi').value, tin_id: state.tinRef ? state.tinRef.id : '', text };
+  if (state.needWK && !key && !DEMO){ st.className = 'status err'; st.textContent = 'Nhập khóa ghi.'; return; }
+  const payload = { key, date: state.date, khoi: $('cKhoi').value, tin_id: state.tinRef ? state.tinRef.id : '', text, hp: $('cHp').value };
   $('cSend').disabled = true; st.className = 'status'; st.textContent = 'Đang gửi…';
   try {
     if (DEMO){
