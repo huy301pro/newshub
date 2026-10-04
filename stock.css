@@ -1,0 +1,1338 @@
+/* ==========================================================================
+   STOCK.CSS - Khối Dữ liệu & Phân tích tài chính cổ phiếu (NewsHub)
+   Kế thừa biến CSS (:root) và font chữ từ index.html
+   Hỗ trợ hoàn toàn Light mode & Dark mode, Responsive >= 375px
+   Phiên bản BƯỚC 5i (BẢN ĐẦY ĐỦ):
+   - Sửa lỗi biểu tượng kính lúp đè lên chữ (padding-left >= 38px, icon căn chuẩn).
+   - Màn hình mặc định gọn gàng: Toolbar, Thẻ thông tin, Hàng 3 menu lọc Excel + Bộ nhanh.
+   - 3 Menu Excel: Checkbox không đóng khi bấm, cập nhật ngay, lọc nhanh, Bottom Sheet <= 60vh.
+   - Hàng tag chỉ số đang vẽ (kèm dấu ✕ để xóa nhanh).
+   - Quy tắc 2 trục Y tọa độ (disabled nhóm đơn vị thứ 3, chặn P/E 100, cắt tăng trưởng).
+   - Khối Tùy chọn nâng cao đóng sẵn: So sánh tối đa 5 mã (nút xóa tất cả), Trung vị ngành (Viễn thông < 5 mã), Chuẩn hóa = 100.
+   - Zoom thời gian: Phóng to (+), thu nhỏ (-), đặt lại (⟲), Ctrl + lăn chuột, Pinch, Pan, 2 ô Từ...Đến.
+   - BỎ HẲN nút Thang riêng và toàn bộ code liên quan.
+   ========================================================================== */
+
+/* 1. Điều hướng và Tab */
+/* Ẩn khối khi tab Chứng khoán không được kích hoạt */
+#secCK[hidden] ~ #target-stock-CK {
+  display: none !important;
+}
+
+#target-stock-CK {
+  margin-top: 20px;
+}
+
+/* Đảm bảo thanh điều hướng nhảy nhanh cuộn ngang tự thân, không tràn trang */
+.jump {
+  overflow-x: auto !important;
+  scrollbar-width: none !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+.jump::-webkit-scrollbar {
+  display: none !important;
+}
+
+/* 2. Card chính của khối cổ phiếu */
+.stock-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+  padding: 0;
+  margin-bottom: 24px;
+  overflow: hidden;
+  transition: border-color .2s ease;
+}
+
+/* Header summary đóng mở khối */
+.stock-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  background: color-mix(in srgb, var(--sunk) 40%, transparent);
+  cursor: pointer;
+  user-select: none;
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: var(--fg);
+  border-bottom: 1px solid transparent;
+  transition: background .15s ease, border-color .15s ease;
+  list-style: none; /* Ẩn marker mặc định */
+}
+.stock-summary::-webkit-details-marker {
+  display: none;
+}
+.stock-summary:hover {
+  background: color-mix(in srgb, var(--sunk) 70%, transparent);
+}
+.stock-card[open] .stock-summary {
+  border-bottom-color: var(--line);
+}
+
+.stock-summary-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.stock-badge-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--ck), var(--accent));
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  flex: none;
+}
+.stock-summary-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.stock-summary-title {
+  font-size: 1.1rem;
+  line-height: 1.3;
+}
+.stock-summary-sub {
+  font-family: var(--f-body);
+  font-weight: 400;
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.3;
+  margin-top: 2px;
+}
+.stock-summary-btn {
+  font-family: var(--f-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent);
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: var(--accent-soft);
+  white-space: nowrap;
+  flex: none;
+}
+
+/* Nội dung bên trong khối */
+.stock-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ==========================================================================
+   3. HÀNG 1: TOOLBAR GỌN GÀNG (TÌM MÃ, CHU KỲ, KHOẢNG THỜI GIAN, ĐẶT LẠI)
+   ========================================================================== */
+.stock-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+/* Ô tìm kiếm cổ phiếu (Đã sửa lỗi đè icon: padding-left >= 38px) */
+.stock-search-wrap {
+  position: relative;
+  flex: 1 1 240px;
+  max-width: 320px;
+}
+.stock-search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+.stock-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  font-size: 0.95rem;
+  pointer-events: none;
+  z-index: 2;
+}
+.stock-search-input {
+  width: 100%;
+  height: 42px;
+  padding: 0 14px 0 38px !important; /* Đảm bảo không bao giờ đè chữ */
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--fg);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  transition: all .15s ease;
+}
+.stock-search-input:focus {
+  background: var(--surface);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+.stock-search-input::placeholder {
+  text-transform: none;
+  font-weight: 400;
+  letter-spacing: normal;
+  color: var(--muted);
+}
+
+/* Dropdown gợi ý tìm kiếm */
+.stock-suggest-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 280px;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.15);
+  z-index: 30;
+  list-style: none;
+  padding: 4px 0;
+  margin: 0;
+}
+.stock-suggest-item {
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+  transition: background .1s ease;
+  font-size: 0.88rem;
+}
+.stock-suggest-item:hover, .stock-suggest-item.active {
+  background: var(--accent-soft);
+}
+.stock-sug-code {
+  font-weight: 700;
+  color: var(--accent);
+  min-width: 48px;
+}
+.stock-sug-name {
+  flex: 1;
+  color: var(--fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.stock-sug-san {
+  font-size: 0.75rem;
+  color: var(--muted);
+  padding: 2px 6px;
+  background: var(--sunk);
+  border-radius: 4px;
+}
+
+/* Nhóm nút chọn chu kỳ & khoảng thời gian */
+.stock-btn-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  align-items: center;
+}
+.stock-btn-group {
+  display: inline-flex;
+  background: var(--sunk);
+  padding: 3px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+}
+.stock-btn {
+  min-height: 40px; /* Chuẩn touch >= 40px */
+  padding: 0 13px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all .15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+.stock-btn:hover {
+  color: var(--fg);
+}
+.stock-btn.active {
+  background: var(--surface);
+  color: var(--accent);
+  box-shadow: 0 2px 6px rgba(0,0,0,.08);
+}
+
+/* Nút Đặt lại về mặc định */
+.stock-reset-btn {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  background: var(--sunk);
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all .15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.stock-reset-btn:hover {
+  border-color: var(--accent);
+  color: var(--fg);
+  background: var(--surface);
+}
+
+/* ==========================================================================
+   4. THẺ THÔNG TIN TỔNG QUAN & ĐỊNH GIÁ (GỌN GÀNG)
+   ========================================================================== */
+.stock-overview-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stock-info-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding: 14px 18px;
+  background: var(--sunk);
+  border-radius: 12px;
+}
+.stock-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 12px;
+}
+.stock-code-badge {
+  font-family: var(--f-display);
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: .02em;
+}
+.stock-company-name {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--fg);
+}
+.stock-tag {
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+.stock-meta-right {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+/* Hộp định giá Hiện tại & Giá thị trường */
+.stock-val-box {
+  background: color-mix(in srgb, var(--accent) 5%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--line));
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.stock-val-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 16px;
+}
+.stock-price-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.stock-price-label {
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--fg);
+}
+.stock-price-input {
+  min-height: 40px;
+  width: 140px;
+  padding: 0 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--fg);
+  text-align: right;
+  transition: all .15s ease;
+}
+.stock-price-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+.stock-price-sub {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.stock-flags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.stock-flag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.78rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--warn) 15%, transparent);
+  color: var(--warn);
+  font-weight: 600;
+}
+
+/* Grid các thẻ số P/E, P/B, NIM */
+.stock-val-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+}
+.stock-val-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.stock-val-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.stock-val-nums {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.stock-val-current {
+  font-family: var(--f-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+.stock-val-ref {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.stock-val-null {
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--warn);
+}
+
+/* ==========================================================================
+   5. BƯỚC 5i: 3 MENU CHỌN CHỈ SỐ KIỂU BỘ LỌC EXCEL & BỘ NHANH
+   ========================================================================== */
+.stock-menus-toolbar {
+  position: relative;
+  z-index: 20;
+}
+.stock-excel-menus-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.stock-excel-menu-wrap {
+  position: relative;
+}
+
+/* Nút bấm mở menu lọc Excel */
+.stock-excel-menu-btn {
+  min-height: 40px; /* Chuẩn touch >= 40px */
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--fg);
+  font-size: 0.88rem;
+  font-weight: 600;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: all .15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  user-select: none;
+}
+.stock-excel-menu-btn:hover {
+  border-color: var(--accent);
+}
+.stock-excel-menu-btn.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 2px 8px rgba(0,0,0,.08);
+}
+.stock-excel-menu-btn.preset-btn {
+  background: var(--sunk);
+}
+
+.stock-badge-selected-count {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.stock-arrow-icon {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+/* Dropdown popover bộ lọc kiểu Excel (Desktop) */
+.stock-excel-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 300px;
+  max-width: 380px;
+  max-height: 440px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: stockMenuFadeIn 0.15s ease;
+}
+
+@keyframes stockMenuFadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.stock-excel-dropdown-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Phần đầu dropdown: Tìm kiếm & Hành động nhanh */
+.stock-excel-dropdown-head {
+  padding: 10px 12px;
+  background: var(--sunk);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.stock-excel-search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+.stock-excel-search-box .stock-search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.stock-excel-search-input {
+  width: 100%;
+  height: 36px;
+  padding: 0 10px 0 32px !important;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 0.84rem;
+  color: var(--fg);
+}
+.stock-excel-actions-row {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.stock-excel-action-btn {
+  font-size: 0.78rem;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--fg);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .1s ease;
+}
+.stock-excel-action-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Thân dropdown: Danh sách checkbox cuộn bên trong */
+.stock-excel-list {
+  padding: 6px 0;
+  overflow-y: auto;
+  max-height: 260px;
+  display: flex;
+  flex-direction: column;
+}
+.stock-excel-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 40px; /* Chiều cao mỗi hàng >= 40px */
+  padding: 8px 14px;
+  cursor: pointer;
+  font-size: 0.86rem;
+  color: var(--fg);
+  user-select: none;
+  transition: background .1s ease;
+}
+.stock-excel-item:hover:not(.disabled) {
+  background: color-mix(in srgb, var(--sunk) 60%, transparent);
+}
+.stock-excel-cb {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--accent);
+  cursor: pointer;
+  flex: none;
+}
+.stock-excel-label {
+  flex: 1;
+  min-width: 0;
+  font-weight: 500;
+  line-height: 1.3;
+}
+.stock-excel-unit {
+  font-size: 0.75rem;
+  color: var(--muted);
+  background: var(--sunk);
+  padding: 2px 6px;
+  border-radius: 4px;
+  flex: none;
+  font-weight: 600;
+}
+
+/* Trạng thái disabled khi vi phạm quy tắc 2 trục */
+.stock-excel-item.disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+  filter: grayscale(0.5);
+}
+.stock-excel-item.disabled .stock-excel-cb {
+  cursor: not-allowed;
+}
+
+/* Chân dropdown: Nút Xong */
+.stock-excel-dropdown-foot {
+  padding: 8px 12px;
+  border-top: 1px solid var(--line);
+  background: var(--sunk);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.stock-excel-hint-text {
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+.stock-excel-done-btn {
+  padding: 6px 18px;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.84rem;
+  border: none;
+  cursor: pointer;
+  transition: opacity .15s ease;
+}
+.stock-excel-done-btn:hover {
+  opacity: 0.9;
+}
+
+/* Dropdown Bộ nhanh (Presets) */
+.stock-preset-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 260px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.16);
+  z-index: 100;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  animation: stockMenuFadeIn 0.15s ease;
+}
+.stock-preset-item {
+  padding: 9px 12px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--fg);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all .1s ease;
+}
+.stock-preset-item:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* ==========================================================================
+   6. HÀNG TAGS CHỈ SỐ ĐANG VẼ (KÈM DẤU ✕ ĐỂ XÓA NHANH)
+   ========================================================================== */
+.stock-active-tags-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0;
+}
+.stock-active-tags-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--muted);
+  margin-right: 2px;
+}
+.stock-active-tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.stock-active-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--fg);
+  box-shadow: 0 1px 3px rgba(0,0,0,.04);
+}
+.stock-active-tag-label {
+  line-height: 1.2;
+}
+.stock-active-tag-remove {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.85rem;
+  padding: 0 2px;
+  line-height: 1;
+  transition: color .1s ease;
+}
+.stock-active-tag-remove:hover {
+  color: var(--down);
+}
+
+/* ==========================================================================
+   7. MỘT BIỂU ĐỒ DUY NHẤT & BỘ ĐIỀU KHIỂN ZOOM
+   ========================================================================== */
+.stock-chart-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px;
+}
+.stock-chart-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+.stock-chart-title {
+  font-family: var(--f-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--fg);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.stock-chart-units {
+  font-family: var(--f-body);
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+/* Bộ nút Zoom: [+], [-], [⟲] */
+.stock-zoom-btn-group {
+  display: inline-flex;
+  background: var(--sunk);
+  padding: 2px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  gap: 2px;
+}
+.stock-zoom-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: var(--fg);
+  font-size: 0.95rem;
+  font-weight: 700;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all .1s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.stock-zoom-btn:hover {
+  background: var(--surface);
+  color: var(--accent);
+}
+
+/* Canvas container */
+.stock-canvas-container {
+  position: relative;
+  width: 100%;
+  height: 380px;
+  max-height: 480px;
+}
+
+/* Bộ điều khiển khoảng thời gian (Từ ... đến ...) */
+.stock-time-range-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+.stock-time-range-label {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.stock-time-range-inputs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.stock-time-range-inputs label {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.stock-time-select {
+  height: 32px;
+  padding: 0 8px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 0.84rem;
+  color: var(--fg);
+  cursor: pointer;
+}
+.stock-zoom-hint {
+  font-size: 0.76rem;
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* ==========================================================================
+   8. KHỐI "TÙY CHỌN NÂNG CAO" ĐÓNG SẴN
+   ========================================================================== */
+.stock-advanced-details {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all .15s ease;
+}
+.stock-advanced-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  cursor: pointer;
+  user-select: none;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--fg);
+  background: color-mix(in srgb, var(--sunk) 40%, transparent);
+  list-style: none;
+}
+.stock-advanced-summary::-webkit-details-marker {
+  display: none;
+}
+.stock-advanced-summary:hover {
+  background: color-mix(in srgb, var(--sunk) 70%, transparent);
+}
+.stock-advanced-arrow {
+  color: var(--muted);
+  font-size: 0.85rem;
+  transition: transform .2s ease;
+}
+.stock-advanced-details[open] .stock-advanced-arrow {
+  transform: rotate(180deg);
+}
+
+.stock-advanced-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border-top: 1px solid var(--line);
+}
+
+/* Hàng switch bật tắt */
+.stock-advanced-toggles-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 24px;
+}
+.stock-switch-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--fg);
+}
+.stock-switch-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.stock-switch-slider {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+  background-color: var(--line);
+  border-radius: 20px;
+  transition: background-color .2s;
+  flex: none;
+}
+.stock-switch-slider::before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  border-radius: 50%;
+  transition: transform .2s;
+}
+.stock-switch-input:checked + .stock-switch-slider {
+  background-color: var(--accent);
+}
+.stock-switch-input:checked + .stock-switch-slider::before {
+  transform: translateX(16px);
+}
+
+/* Khối chi tiết Chế độ so sánh */
+.stock-compare-box {
+  background: color-mix(in srgb, var(--accent) 4%, var(--surface));
+  border: 1px dashed color-mix(in srgb, var(--accent) 40%, var(--line));
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.stock-compare-add-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.stock-compare-search-wrap {
+  position: relative;
+  flex: 1 1 200px;
+  max-width: 280px;
+}
+.stock-clear-compare-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all .1s ease;
+}
+.stock-clear-compare-btn:hover {
+  color: var(--down);
+  border-color: var(--down);
+}
+
+.stock-compare-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.stock-compare-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--fg);
+}
+.stock-compare-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
+}
+.stock-compare-tag-code {
+  font-weight: 800;
+}
+.stock-compare-tag-type {
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+.stock-compare-remove {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0 2px;
+  font-size: 0.95rem;
+}
+.stock-compare-remove:hover {
+  color: var(--down);
+}
+
+/* Bảng Hiện tại trong chế độ so sánh */
+.stock-compare-table-wrap {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+.stock-compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+  text-align: left;
+}
+.stock-compare-table th {
+  background: var(--sunk);
+  padding: 9px 12px;
+  font-weight: 700;
+  color: var(--fg);
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.stock-compare-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--line);
+  color: var(--fg);
+  white-space: nowrap;
+}
+.stock-compare-table tr:last-child td {
+  border-bottom: none;
+}
+.stock-compare-table tr:hover td {
+  background: color-mix(in srgb, var(--sunk) 40%, transparent);
+}
+
+.stock-compare-note {
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--muted);
+  font-style: italic;
+  padding: 6px 10px;
+  background: color-mix(in srgb, var(--sunk) 60%, transparent);
+  border-radius: 6px;
+}
+
+/* Thông báo & cảnh báo */
+.stock-notice-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.stock-notice-item {
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--muted);
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.stock-notice-item.warn {
+  color: var(--warn);
+  font-weight: 600;
+}
+
+/* Thông báo tải / lỗi */
+.stock-msg-box {
+  padding: 16px 20px;
+  border-radius: 10px;
+  background: var(--sunk);
+  color: var(--muted);
+  font-size: 0.92rem;
+  text-align: center;
+}
+.stock-msg-box.err {
+  background: color-mix(in srgb, var(--down) 10%, var(--surface));
+  color: var(--down);
+  border: 1px solid color-mix(in srgb, var(--down) 30%, transparent);
+}
+
+/* Chân khối */
+.stock-footer {
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.stock-footer p {
+  margin: 0;
+}
+
+/* Biểu tượng thông tin */
+.stock-info-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--sunk);
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: help;
+}
+.stock-tooltip-trigger {
+  position: relative;
+  display: inline-block;
+}
+.stock-tooltip-trigger:hover::after,
+.stock-tooltip-trigger:focus::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1e2927;
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.76rem;
+  font-weight: 400;
+  font-family: var(--f-body);
+  white-space: normal;
+  width: max-content;
+  max-width: 260px;
+  line-height: 1.35;
+  box-shadow: 0 4px 12px rgba(0,0,0,.25);
+  z-index: 50;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   9. RESPONSIVE DESIGN (<= 640px & <= 375px) - BOTTOM SHEET TRÊN MOBILE
+   ========================================================================== */
+@media (max-width: 768px) {
+  .stock-canvas-container {
+    height: 340px;
+  }
+}
+
+@media (max-width: 640px) {
+  .stock-body {
+    padding: 14px;
+    gap: 16px;
+  }
+  .stock-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .stock-search-wrap {
+    max-width: 100%;
+  }
+  .stock-btn-groups {
+    justify-content: flex-start;
+  }
+  .stock-btn, .stock-reset-btn {
+    flex: 1 1 auto;
+    padding: 0 10px;
+    font-size: 0.8rem;
+  }
+  .stock-excel-menus-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .stock-excel-menu-wrap {
+    width: 100%;
+  }
+  .stock-excel-menu-btn {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  /* Backdrop nền mờ cho Mobile Bottom Sheet */
+  .stock-sheet-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9998;
+    backdrop-filter: blur(2px);
+  }
+
+  /* Menu Excel chuyển thành BOTTOM SHEET trượt từ dưới lên */
+  .stock-excel-dropdown {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    top: auto !important;
+    max-height: 60vh !important;
+    border-radius: 16px 16px 0 0 !important;
+    z-index: 9999 !important;
+    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.3) !important;
+    animation: stockSheetUp 0.25s ease-out !important;
+  }
+
+  .stock-preset-dropdown {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    top: auto !important;
+    max-height: 50vh !important;
+    border-radius: 16px 16px 0 0 !important;
+    z-index: 9999 !important;
+    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.3) !important;
+    animation: stockSheetUp 0.25s ease-out !important;
+  }
+
+  @keyframes stockSheetUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+
+  .stock-canvas-container {
+    height: 300px;
+  }
+  .stock-val-top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .stock-price-input {
+    width: 100%;
+    text-align: left;
+  }
+}
+
+@media (max-width: 375px) {
+  .stock-card {
+    border-radius: 12px;
+  }
+  .stock-summary {
+    padding: 12px 14px;
+  }
+  .stock-summary-title {
+    font-size: 0.98rem;
+  }
+  .stock-btn, .stock-reset-btn, .stock-excel-menu-btn {
+    min-height: 40px; /* Touch target tối thiểu 40px */
+    font-size: 0.8rem;
+  }
+  .stock-search-input {
+    padding-left: 38px !important;
+    font-size: 0.85rem;
+  }
+  .stock-canvas-container {
+    height: 260px;
+  }
+  .stock-compare-table th, .stock-compare-table td {
+    padding: 7px 8px;
+    font-size: 0.78rem;
+  }
+}

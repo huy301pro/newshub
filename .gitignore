@@ -1,0 +1,9 @@
+# Cac quy tac chan file du lieu va he thong bao ve
+*.duckdb
+*.parquet
+*.db
+*.csv
+*.env
+*.log
+export_web/
+logs/
