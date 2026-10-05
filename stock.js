@@ -290,7 +290,9 @@
 
     // Tùy chọn hiển thị
     periodMode: 'QUY',     // 'QUY' | 'NAM'
-    timeRange: '3Y',       // '3Y' | '5Y' | 'ALL'
+    timeRange: '3Y',       // '3Y' | '5Y' | 'ALL' | 'custom'
+    customTimeRange: { from: null, to: null },
+    manualAxisBounds: { y: null, y1: null }, // Chỉnh tay độ giãn trục dọc B3
     normalized100: false,  // Chuẩn hóa = 100 tại đầu kỳ
     showIndustryMedian: false, // Hiển thị đường trung vị ngành
 
@@ -600,6 +602,9 @@
                     <button type="button" class="stock-preset-item" data-preset="tang_truong">🚀 Tăng trưởng (DT & LNST YoY)</button>
                     <button type="button" class="stock-preset-item" data-preset="hieu_qua">💎 Hiệu quả (ROE, ROA)</button>
                     <button type="button" class="stock-preset-item" data-preset="quy_mo">🏢 Quy mô (Doanh thu, LNST, VCSH, TTS)</button>
+                    <div class="stock-excel-dropdown-foot stock-preset-foot">
+                      <button type="button" class="stock-excel-done-btn stock-preset-close-btn" id="stkPresetCloseBtn">Đóng</button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -632,6 +637,22 @@
 
               <div class="stock-canvas-container">
                 <canvas id="stockMainCanvas"></canvas>
+              </div>
+
+              <!-- Hàng tự chỉnh độ giãn trục dọc (B3) -->
+              <div class="stock-axis-adjust-bar" id="stkAxisAdjustBar">
+                <div class="stock-axis-adjust-group" id="stkAxisLeftGroup">
+                  <span class="stock-axis-adjust-label">Trục trái:</span>
+                  <button type="button" class="stock-axis-adjust-btn" id="stkAxisLeftMinus" title="Nới rộng khoảng hiển thị (−)">−</button>
+                  <button type="button" class="stock-axis-adjust-btn" id="stkAxisLeftPlus" title="Thu hẹp khoảng hiển thị (＋)">＋</button>
+                  <button type="button" class="stock-axis-adjust-btn stock-axis-auto-btn" id="stkAxisLeftAuto" title="Tự động căn chỉnh">Tự động</button>
+                </div>
+                <div class="stock-axis-adjust-group" id="stkAxisRightGroup" hidden>
+                  <span class="stock-axis-adjust-label">Trục phải:</span>
+                  <button type="button" class="stock-axis-adjust-btn" id="stkAxisRightMinus" title="Nới rộng khoảng hiển thị (−)">−</button>
+                  <button type="button" class="stock-axis-adjust-btn" id="stkAxisRightPlus" title="Thu hẹp khoảng hiển thị (＋)">＋</button>
+                  <button type="button" class="stock-axis-adjust-btn stock-axis-auto-btn" id="stkAxisRightAuto" title="Tự động căn chỉnh">Tự động</button>
+                </div>
               </div>
 
               <!-- 2 ô chọn thời gian: Từ [kỳ/tháng] đến [kỳ/tháng] -->
@@ -1640,15 +1661,19 @@
         btnEl.classList.add('active');
       }
 
-      // Trên mobile hiển thị backdrop
+      // Trên mobile hiển thị backdrop và khóa cuộn trang nền (A1, A6)
       const backdrop = document.getElementById('stockSheetBackdrop');
-      if (backdrop && isMobileScreen()) {
-        backdrop.hidden = false;
+      if (isMobileScreen()) {
+        if (backdrop) backdrop.hidden = false;
+        document.body.classList.add('stock-sheet-open');
+      } else {
+        if (backdrop) backdrop.hidden = true;
+        document.body.classList.remove('stock-sheet-open');
       }
 
-      // Focus vào ô tìm kiếm nhanh nếu có
+      // Focus vào ô tìm kiếm nhanh (A3: chỉ trên desktop, không focus trên mobile)
       const searchInp = dropdownEl.querySelector('.stock-excel-search-input');
-      if (searchInp) {
+      if (searchInp && !isMobileScreen()) {
         setTimeout(() => searchInp.focus(), 50);
       }
     }
@@ -1671,6 +1696,7 @@
 
     const backdrop = document.getElementById('stockSheetBackdrop');
     if (backdrop) backdrop.hidden = true;
+    document.body.classList.remove('stock-sheet-open');
   }
 
   // ==========================================================================
@@ -1724,7 +1750,8 @@
   }
 
   // ==========================================================================
-  // 17. ĐỒNG BỘ 2 CHIỀU GIỮA ZOOM VÀ 2 Ô THỜI GIAN
+  // ==========================================================================
+  // 17. ĐỒNG BỘ 2 CHIỀU GIỮA ZOOM VÀ 2 Ô THỜI GIAN + TRỤC DỌC TỰ CO GIÃN (B1, B2)
   // ==========================================================================
   function updateTimeSelects(chart) {
     const fromSel = document.getElementById('stkTimeFromSelect');
@@ -1739,48 +1766,187 @@
 
     fromSel.value = labels[xMin];
     toSel.value = labels[xMax];
+
+    state.timeRange = 'custom';
+    state.customTimeRange = { from: labels[xMin], to: labels[xMax] };
+    document.querySelectorAll('[data-range]').forEach(b => b.classList.remove('active'));
+
+    // Tự co giãn trục dọc theo vùng dữ liệu đang hiển thị (B2)
+    applyAutoAxisScaling(chart, xMin, xMax);
   }
 
-  function setupTimeRangeSelects(labels) {
+  function setupTimeRangeSelects(allPeriods) {
     const fromSel = document.getElementById('stkTimeFromSelect');
     const toSel = document.getElementById('stkTimeToSelect');
-    if (!fromSel || !toSel || !labels.length) return;
+    if (!fromSel || !toSel || !allPeriods || !allPeriods.length) return;
 
-    fromSel.innerHTML = '';
-    toSel.innerHTML = '';
+    // B1: Luôn liệt kê TẤT CẢ kỳ có dữ liệu của mã đang chọn
+    const currentOptions = Array.from(fromSel.options).map(o => o.value);
+    const needRebuild = currentOptions.length !== allPeriods.length || currentOptions[0] !== allPeriods[0];
 
-    labels.forEach(lb => {
-      const optFrom = document.createElement('option');
-      optFrom.value = lb;
-      optFrom.textContent = lb;
-      fromSel.appendChild(optFrom);
+    if (needRebuild) {
+      fromSel.innerHTML = '';
+      toSel.innerHTML = '';
+      allPeriods.forEach(lb => {
+        const optFrom = document.createElement('option');
+        optFrom.value = lb;
+        optFrom.textContent = lb;
+        fromSel.appendChild(optFrom);
 
-      const optTo = document.createElement('option');
-      optTo.value = lb;
-      optTo.textContent = lb;
-      toSel.appendChild(optTo);
-    });
-
-    fromSel.value = labels[0];
-    toSel.value = labels[labels.length - 1];
+        const optTo = document.createElement('option');
+        optTo.value = lb;
+        optTo.textContent = lb;
+        toSel.appendChild(optTo);
+      });
+    }
 
     fromSel.onchange = () => {
-      if (!state.chartInstance) return;
-      const fIdx = labels.indexOf(fromSel.value);
-      const tIdx = labels.indexOf(toSel.value);
-      if (fIdx >= 0 && tIdx >= fIdx) {
-        state.chartInstance.zoomScale('x', { min: fIdx, max: tIdx }, 'none');
+      let fIdx = allPeriods.indexOf(fromSel.value);
+      let tIdx = allPeriods.indexOf(toSel.value);
+      // Ràng buộc Từ <= Đến: nếu sai thì tự sửa, không báo lỗi (B1)
+      if (fIdx > tIdx) {
+        toSel.value = fromSel.value;
+        tIdx = fIdx;
       }
+      state.timeRange = 'custom';
+      state.customTimeRange = { from: fromSel.value, to: toSel.value };
+      document.querySelectorAll('[data-range]').forEach(b => b.classList.remove('active'));
+      state.manualAxisBounds = { y: null, y1: null };
+      renderUnifiedChart();
     };
 
     toSel.onchange = () => {
-      if (!state.chartInstance) return;
-      const fIdx = labels.indexOf(fromSel.value);
-      const tIdx = labels.indexOf(toSel.value);
-      if (tIdx >= 0 && tIdx >= fIdx) {
-        state.chartInstance.zoomScale('x', { min: fIdx, max: tIdx }, 'none');
+      let fIdx = allPeriods.indexOf(fromSel.value);
+      let tIdx = allPeriods.indexOf(toSel.value);
+      // Ràng buộc Từ <= Đến: nếu sai thì tự sửa, không báo lỗi (B1)
+      if (tIdx < fIdx) {
+        fromSel.value = toSel.value;
+        fIdx = tIdx;
       }
+      state.timeRange = 'custom';
+      state.customTimeRange = { from: fromSel.value, to: toSel.value };
+      document.querySelectorAll('[data-range]').forEach(b => b.classList.remove('active'));
+      state.manualAxisBounds = { y: null, y1: null };
+      renderUnifiedChart();
     };
+  }
+
+  // ==========================================================================
+  // TỰ CO GIÃN TRỤC DỌC THEO DỮ LIỆU ĐANG HIỂN THỊ (B2) & CHỈNH TAY (B3)
+  // ==========================================================================
+  function applyAutoAxisScaling(chart, xStartIdx = 0, xEndIdx = null) {
+    if (!chart || !chart.scales) return;
+    const labels = chart.data.labels || [];
+    if (!labels.length) return;
+
+    const sIdx = Math.max(0, Math.min(labels.length - 1, xStartIdx));
+    const eIdx = Math.max(0, Math.min(labels.length - 1, xEndIdx !== null ? xEndIdx : labels.length - 1));
+
+    ['y', 'y1'].forEach(axisId => {
+      const scale = chart.scales[axisId];
+      if (!scale) return;
+
+      // Nếu đang chỉnh tay trục này (B3), dùng giá trị người dùng đã chọn
+      if (state.manualAxisBounds[axisId] && state.manualAxisBounds[axisId].custom) {
+        scale.options.min = state.manualAxisBounds[axisId].min;
+        scale.options.max = state.manualAxisBounds[axisId].max;
+        return;
+      }
+
+      // Quét các giá trị trên vùng đang hiển thị
+      let vals = [];
+      let isPeAxis = false;
+
+      (chart.data.datasets || []).forEach(ds => {
+        if ((ds.yAxisID || 'y') === axisId && ds.data) {
+          if (ds.indicatorKey === 'pe') isPeAxis = true;
+          for (let i = sIdx; i <= eIdx; i++) {
+            const v = ds.data[i];
+            if (v !== null && v !== undefined && !isNaN(v)) {
+              vals.push(Number(v));
+            }
+          }
+        }
+      });
+
+      if (vals.length === 0) {
+        scale.options.min = 0;
+        scale.options.max = 100;
+        return;
+      }
+
+      let minV = Math.min(...vals);
+      let maxV = Math.max(...vals);
+
+      if (minV === maxV) {
+        if (minV === 0) {
+          scale.options.min = -1;
+          scale.options.max = 1;
+        } else {
+          const p = Math.abs(minV) * 0.1 || 1;
+          scale.options.min = minV - p;
+          scale.options.max = maxV + p;
+        }
+      } else {
+        const span = maxV - minV;
+        const pad = span * 0.05; // Đệm ~5%
+        let cMin = minV - pad;
+        let cMax = maxV + pad;
+
+        if (isPeAxis) {
+          // Trục có P/E: giữ trần 100, nhưng nếu max hiển thị < 100 thì co theo dữ liệu (B2)
+          if (cMax > 100) cMax = 100;
+          else cMax = Math.min(100, cMax);
+          if (minV >= 0 && cMin < 0) cMin = Math.max(0, cMin);
+        } else {
+          if (minV >= 0 && cMin < 0) cMin = 0;
+        }
+
+        scale.options.min = cMin;
+        scale.options.max = cMax;
+      }
+
+      state.manualAxisBounds[axisId] = {
+        custom: false,
+        min: scale.options.min,
+        max: scale.options.max
+      };
+    });
+
+    chart.update('none');
+  }
+
+  function adjustAxisZoom(axisId, factor) {
+    if (!state.chartInstance || !state.chartInstance.scales[axisId]) return;
+    const scale = state.chartInstance.scales[axisId];
+
+    let curMin = scale.options.min !== undefined ? scale.options.min : scale.min;
+    let curMax = scale.options.max !== undefined ? scale.options.max : scale.max;
+    if (curMin === undefined || curMax === undefined || isNaN(curMin) || isNaN(curMax)) return;
+
+    const center = (curMin + curMax) / 2;
+    const halfSpan = (curMax - curMin) / 2;
+    const newHalf = halfSpan * factor;
+
+    const newMin = center - newHalf;
+    const newMax = center + newHalf;
+
+    state.manualAxisBounds[axisId] = {
+      custom: true,
+      min: newMin,
+      max: newMax
+    };
+
+    scale.options.min = newMin;
+    scale.options.max = newMax;
+    state.chartInstance.update('none');
+  }
+
+  function resetAxisZoom(axisId) {
+    state.manualAxisBounds[axisId] = { custom: false, min: null, max: null };
+    if (state.chartInstance) {
+      applyAutoAxisScaling(state.chartInstance, 0, state.chartInstance.data.labels.length - 1);
+    }
   }
 
   // ==========================================================================
@@ -1800,34 +1966,44 @@
 
     // 1. Thu thập mốc thời gian (timeline Quý hoặc Năm từ 2015 trở đi)
     const allPeriods = primarySeries.map(item => item.ky);
-    let filterPeriods = allPeriods;
+    if (!allPeriods.length) return;
+
+    // Nạp đầy đủ options cho 2 ô Từ và Đến (B1)
+    setupTimeRangeSelects(allPeriods);
+
+    const fromSel = document.getElementById('stkTimeFromSelect');
+    const toSel = document.getElementById('stkTimeToSelect');
     const totalP = allPeriods.length;
+
+    // Đồng bộ khoảng thời gian hiển thị
     if (state.timeRange === '3Y') {
       const n = isQuy ? 12 : 3;
-      filterPeriods = allPeriods.slice(Math.max(0, totalP - n));
+      if (fromSel) fromSel.value = allPeriods[Math.max(0, totalP - n)];
+      if (toSel) toSel.value = allPeriods[totalP - 1];
     } else if (state.timeRange === '5Y') {
       const n = isQuy ? 20 : 5;
-      filterPeriods = allPeriods.slice(Math.max(0, totalP - n));
-    } else if (state.timeRange === 'all') {
-      // Với P/E hoặc P/B, trục "Tất cả" bắt đầu từ kỳ đầu tiên có dữ liệu
-      const hasValuation = state.selectedIndicators.has('pe') || state.selectedIndicators.has('pb');
-      if (hasValuation && primarySeries.length) {
-        let firstValidIdx = -1;
-        for (let i = 0; i < primarySeries.length; i++) {
-          const item = primarySeries[i];
-          const hasVal = Array.from(state.selectedIndicators).some(k => item[k] !== null && item[k] !== undefined);
-          if (hasVal) {
-            firstValidIdx = i;
-            break;
-          }
-        }
-        if (firstValidIdx > 0) {
-          filterPeriods = allPeriods.slice(firstValidIdx);
-        }
+      if (fromSel) fromSel.value = allPeriods[Math.max(0, totalP - n)];
+      if (toSel) toSel.value = allPeriods[totalP - 1];
+    } else if (state.timeRange === 'ALL') {
+      if (fromSel) fromSel.value = allPeriods[0];
+      if (toSel) toSel.value = allPeriods[totalP - 1];
+    } else if (state.timeRange === 'custom') {
+      if (state.customTimeRange.from && allPeriods.includes(state.customTimeRange.from) && fromSel) {
+        fromSel.value = state.customTimeRange.from;
+      }
+      if (state.customTimeRange.to && allPeriods.includes(state.customTimeRange.to) && toSel) {
+        toSel.value = state.customTimeRange.to;
       }
     }
 
-    if (!filterPeriods.length) return;
+    let fIdx = fromSel ? allPeriods.indexOf(fromSel.value) : 0;
+    let tIdx = toSel ? allPeriods.indexOf(toSel.value) : totalP - 1;
+    if (fIdx < 0) fIdx = 0;
+    if (tIdx < 0) tIdx = totalP - 1;
+    if (fIdx > tIdx) tIdx = fIdx;
+
+    let filterPeriods = allPeriods.slice(fIdx, tIdx + 1);
+    if (!filterPeriods.length) filterPeriods = allPeriods;
 
     const activeStocks = getAllActiveStocks();
     const activeIndicators = Array.from(state.selectedIndicators);
@@ -2298,10 +2474,6 @@
           font: { size: fontSize, weight: 'bold' }
         }
       };
-      if (primaryUnit === 'pe') {
-        scalesConfig.y.max = 100;
-        scalesConfig.y.suggestedMax = 25;
-      }
 
       // Trục Y2 (Bên phải nếu có)
       if (secondaryUnit) {
@@ -2321,10 +2493,6 @@
             font: { size: fontSize, weight: 'bold' }
           }
         };
-        if (secondaryUnit === 'pe') {
-          scalesConfig.y1.max = 100;
-          scalesConfig.y1.suggestedMax = 25;
-        }
       }
     }
 
@@ -2333,8 +2501,6 @@
       state.chartInstance.destroy();
       state.chartInstance = null;
     }
-
-    setupTimeRangeSelects(filterPeriods);
 
     const ctx = mainCanvas.getContext('2d');
     state.chartInstance = new window.Chart(ctx, {
@@ -2455,7 +2621,14 @@
       }
     });
 
-    updateTimeSelects(state.chartInstance);
+    // Tự co giãn trục dọc theo dữ liệu đang hiển thị (B2)
+    applyAutoAxisScaling(state.chartInstance, 0, filterPeriods.length - 1);
+
+    // Cập nhật hiển thị nhóm nút chỉnh trục phải (B3)
+    const rightGroup = document.getElementById('stkAxisRightGroup');
+    if (rightGroup) {
+      rightGroup.hidden = !secondaryUnit || state.normalized100;
+    }
 
     // Cập nhật ghi chú công thức P/E, P/B dưới biểu đồ
     const footnoteEl = document.getElementById('stkChartFootnote');
@@ -2741,6 +2914,11 @@
       });
     });
 
+    const presetCloseBtn = document.getElementById('stkPresetCloseBtn');
+    if (presetCloseBtn) {
+      presetCloseBtn.addEventListener('click', () => closeAllDropdowns());
+    }
+
     // 8. Tùy chọn nâng cao: Switch So sánh, Trung vị ngành, Chuẩn hóa
     const cmpSwitch = document.getElementById('stkCompareSwitch');
     if (cmpSwitch) {
@@ -2809,6 +2987,33 @@
           updateTimeSelects(state.chartInstance);
         }
       });
+    }
+
+    // 10. Điều khiển co giãn trục dọc (B3): [-], [+], [Tự động]
+    const leftMinusBtn = document.getElementById('stkAxisLeftMinus');
+    if (leftMinusBtn) {
+      leftMinusBtn.addEventListener('click', () => adjustAxisZoom('y', 1.25));
+    }
+    const leftPlusBtn = document.getElementById('stkAxisLeftPlus');
+    if (leftPlusBtn) {
+      leftPlusBtn.addEventListener('click', () => adjustAxisZoom('y', 0.8));
+    }
+    const leftAutoBtn = document.getElementById('stkAxisLeftAuto');
+    if (leftAutoBtn) {
+      leftAutoBtn.addEventListener('click', () => resetAxisZoom('y'));
+    }
+
+    const rightMinusBtn = document.getElementById('stkAxisRightMinus');
+    if (rightMinusBtn) {
+      rightMinusBtn.addEventListener('click', () => adjustAxisZoom('y1', 1.25));
+    }
+    const rightPlusBtn = document.getElementById('stkAxisRightPlus');
+    if (rightPlusBtn) {
+      rightPlusBtn.addEventListener('click', () => adjustAxisZoom('y1', 0.8));
+    }
+    const rightAutoBtn = document.getElementById('stkAxisRightAuto');
+    if (rightAutoBtn) {
+      rightAutoBtn.addEventListener('click', () => resetAxisZoom('y1'));
     }
   }
 

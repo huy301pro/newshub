@@ -867,6 +867,59 @@
   width: 100%;
   height: 380px;
   max-height: 480px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+#stockMainCanvas {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Hàng tự chỉnh độ giãn trục dọc (B3) */
+.stock-axis-adjust-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px 20px;
+  padding: 6px 4px 4px;
+}
+.stock-axis-adjust-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.stock-axis-adjust-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--muted);
+  margin-right: 2px;
+}
+.stock-axis-adjust-btn {
+  min-height: 36px;
+  min-width: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--fg);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  transition: all .15s ease;
+}
+.stock-axis-adjust-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.stock-axis-auto-btn {
+  min-width: 68px;
+  font-size: 0.8rem;
+  padding: 0 8px;
 }
 
 /* Bộ điều khiển khoảng thời gian (Từ ... đến ...) */
@@ -1275,11 +1328,18 @@
     padding: 0 10px;
     font-size: 0.8rem;
   }
+  /* Sửa stacking context để Bottom Sheet nằm TRÊN backdrop (A1) */
+  .stock-menus-toolbar {
+    position: static;
+    z-index: auto;
+  }
   .stock-excel-menus-row {
+    position: static;
     flex-direction: column;
     align-items: stretch;
   }
   .stock-excel-menu-wrap {
+    position: static;
     width: 100%;
   }
   .stock-excel-menu-btn {
@@ -1287,40 +1347,92 @@
     justify-content: space-between;
   }
 
-  /* Backdrop nền mờ cho Mobile Bottom Sheet */
+  /* Backdrop nền mờ cho Mobile Bottom Sheet (A1, A2) */
   .stock-sheet-backdrop {
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.5);
     z-index: 9998;
     backdrop-filter: blur(2px);
+    touch-action: none;
   }
 
-  /* Menu Excel chuyển thành BOTTOM SHEET trượt từ dưới lên */
-  .stock-excel-dropdown {
-    position: fixed !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    top: auto !important;
-    max-height: 60vh !important;
-    border-radius: 16px 16px 0 0 !important;
-    z-index: 9999 !important;
-    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.3) !important;
-    animation: stockSheetUp 0.25s ease-out !important;
-  }
-
+  /* Menu Excel chuyển thành BOTTOM SHEET trượt từ dưới lên (A1, A5) */
+  .stock-excel-dropdown,
   .stock-preset-dropdown {
     position: fixed !important;
     left: 0 !important;
     right: 0 !important;
     bottom: 0 !important;
     top: auto !important;
-    max-height: 50vh !important;
+    max-height: 75vh !important;
+    max-height: 75dvh !important;
+    padding-bottom: max(10px, env(safe-area-inset-bottom)) !important;
     border-radius: 16px 16px 0 0 !important;
     z-index: 9999 !important;
-    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.3) !important;
+    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.35) !important;
     animation: stockSheetUp 0.25s ease-out !important;
+    overflow: hidden !important;
+  }
+
+  .stock-preset-dropdown {
+    max-height: 55vh !important;
+    max-height: 55dvh !important;
+  }
+
+  .stock-excel-dropdown-inner {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    max-height: 100%;
+    overflow: hidden;
+  }
+  .stock-excel-dropdown-head {
+    flex-shrink: 0;
+  }
+  .stock-excel-list {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    min-height: 120px;
+  }
+  .stock-excel-dropdown-foot {
+    flex-shrink: 0;
+    padding-bottom: max(6px, env(safe-area-inset-bottom));
+  }
+  .stock-excel-done-btn {
+    min-height: 38px;
+    min-width: 70px;
+    font-size: 0.9rem;
+  }
+
+  /* Ô nhập tìm nhanh font-size >= 16px tránh iOS auto-zoom (A4) */
+  .stock-excel-search-input {
+    font-size: 16px !important;
+  }
+
+  /* Khóa cuộn trang nền và ẩn nút cuộn lên đầu khi mở sheet (A6) */
+  body.stock-sheet-open {
+    overflow: hidden !important;
+    touch-action: none !important;
+  }
+  body.stock-sheet-open #btt,
+  body.stock-sheet-open .btt {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
+  /* Thanh chỉnh trục dọc mobile (B3) */
+  .stock-axis-adjust-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .stock-axis-adjust-group {
+    justify-content: space-between;
+    width: 100%;
   }
 
   @keyframes stockSheetUp {
