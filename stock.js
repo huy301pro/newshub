@@ -54,15 +54,37 @@
   // Từ điển ánh xạ lý do null tiếng Việt
   const NULL_REASONS = {
     'thieu_quy': 'Chưa đủ 4 quý liên tiếp',
-    'lnst_am': 'Lợi nhuận 4 quý âm',
+    'lnst_am': 'Lợi nhuận 4 quý âm (TTM lỗ)',
+    'lo_ttm': 'Lợi nhuận 4 quý âm (TTM lỗ)',
     'bctc_qua_cu': 'BCTC quá cũ',
     'thieu_so_cp': 'Thiếu số cổ phiếu',
     'so_cp_nghi_loi': 'Số cổ phiếu nghi sai',
-    'khong_co_gia': 'Không có giá',
+    'khong_co_gia': 'Không có dữ liệu giá',
+    'thieu_gia': 'Không có dữ liệu giá',
     'doi_mo_hinh': 'Đổi mô hình BCTC',
-    'vcsh_me_am': 'VCSH mẹ âm',
-    'it_ma': 'Chưa đủ mã để tính trung vị (< 5 mã)'
+    'vcsh_me_am': 'Vốn chủ sở hữu mẹ âm',
+    'vcsh_am': 'Vốn chủ sở hữu mẹ âm',
+    'it_ma': 'Chưa đủ mã để tính trung vị (< 5 mã)',
+    'mốc gốc không nhất quán': 'Mốc gốc không nhất quán (|r0 - 1| > 10%)',
+    'moc_goc_khong_nhat_quan': 'Mốc gốc không nhất quán (|r0 - 1| > 10%)',
+    'tăng vốn chưa lưu hành': 'Tăng vốn chưa lưu hành',
+    'tang_von_chua_luu_hanh': 'Tăng vốn chưa lưu hành',
+    'tăng vốn không rõ nguồn': 'Tăng vốn không rõ nguồn',
+    'tang_von_khong_ro_nguon': 'Tăng vốn không rõ nguồn',
+    'chua_cong_bo': 'Chưa công bố BCTC'
   };
+
+  function hexToRgba(hex, alpha) {
+    if (!hex || typeof hex !== 'string' || !hex.startsWith('#')) return hex;
+    const c = hex.slice(1);
+    if (c.length === 6) {
+      const r = parseInt(c.slice(0, 2), 16);
+      const g = parseInt(c.slice(2, 4), 16);
+      const b = parseInt(c.slice(4, 6), 16);
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+    return hex;
+  }
 
   // Từ điển cờ cảnh báo
   const FLAG_DESCRIPTIONS = {
@@ -189,7 +211,7 @@
       note: 'không phải LDR theo quy định NHNN'
     },
     'nim_uoc_tinh_12t': {
-      k: 'nim_uoc_tinh_12t', label: 'NIM ước tính (12T) (%)', fullLabel: 'NIM ước tính (12 tháng gần nhất)',
+      k: 'nim_uoc_tinh_12t', alt: 'nim_uoc_tinh_nam', label: 'NIM ước tính (12T) (%)', fullLabel: 'NIM ước tính (12 tháng gần nhất)',
       menuGroup: 'tuong_doi', unitGroup: 'phan_tram', unitText: '%',
       dash: [4, 4], marker: 'triangle', defaultOn: false, bankOnly: true, hasIndustry: true
     },
@@ -528,6 +550,9 @@
                     </div>
                   </div>
                 </div>
+                <div class="stock-val-note">
+                  <span>P/E, P/B hiện tại dùng giá phiên gần nhất và lợi nhuận mới công bố; điểm trên đồ thị theo quý dùng giá bình quân quý và trễ 1 kỳ nên có thể khác</span>
+                </div>
               </div>
             </div>
 
@@ -620,6 +645,7 @@
                 </div>
                 <span class="stock-zoom-hint">(Mẹo: Giữ Ctrl + cuộn chuột hoặc dùng 2 ngón tay kéo/thu phóng trên biểu đồ)</span>
               </div>
+              <div class="stock-chart-footnote" id="stkChartFootnote" hidden></div>
             </div>
 
             <!-- KHỐI "TÙY CHỌN NÂNG CAO" ĐÓNG SẴN -->
@@ -1770,33 +1796,38 @@
     const fontSize = isMobile ? 11 : 12; // Cỡ chữ >= 12px (điện thoại >= 11px)
 
     const isQuy = state.periodMode === 'QUY';
-    const primaryMonthly = state.currentStockData.monthly || [];
+    const primarySeries = isQuy ? (state.currentStockData.quarterly || []) : (state.currentStockData.yearly || []);
 
-    // 1. Thu thập mốc thời gian (timeline tháng từ 2023-01 trở đi)
-    const allMonths = primaryMonthly.map(m => m.thang);
-    let filterMonths = allMonths;
-    const totalM = allMonths.length;
+    // 1. Thu thập mốc thời gian (timeline Quý hoặc Năm từ 2015 trở đi)
+    const allPeriods = primarySeries.map(item => item.ky);
+    let filterPeriods = allPeriods;
+    const totalP = allPeriods.length;
     if (state.timeRange === '3Y') {
-      filterMonths = allMonths.slice(Math.max(0, totalM - 36));
+      const n = isQuy ? 12 : 3;
+      filterPeriods = allPeriods.slice(Math.max(0, totalP - n));
     } else if (state.timeRange === '5Y') {
-      filterMonths = allMonths.slice(Math.max(0, totalM - 60));
-    }
-
-    if (!filterMonths.length) return;
-
-    function getBctcKeyForMonth(mStr) {
-      const [y, m] = mStr.split('-').map(Number);
-      if (isQuy) {
-        if (m === 3) return `${y}Q1`;
-        if (m === 6) return `${y}Q2`;
-        if (m === 9) return `${y}Q3`;
-        if (m === 12) return `${y}Q4`;
-        return null;
-      } else {
-        if (m === 12) return `${y}`;
-        return null;
+      const n = isQuy ? 20 : 5;
+      filterPeriods = allPeriods.slice(Math.max(0, totalP - n));
+    } else if (state.timeRange === 'all') {
+      // Với P/E hoặc P/B, trục "Tất cả" bắt đầu từ kỳ đầu tiên có dữ liệu
+      const hasValuation = state.selectedIndicators.has('pe') || state.selectedIndicators.has('pb');
+      if (hasValuation && primarySeries.length) {
+        let firstValidIdx = -1;
+        for (let i = 0; i < primarySeries.length; i++) {
+          const item = primarySeries[i];
+          const hasVal = Array.from(state.selectedIndicators).some(k => item[k] !== null && item[k] !== undefined);
+          if (hasVal) {
+            firstValidIdx = i;
+            break;
+          }
+        }
+        if (firstValidIdx > 0) {
+          filterPeriods = allPeriods.slice(firstValidIdx);
+        }
       }
     }
+
+    if (!filterPeriods.length) return;
 
     const activeStocks = getAllActiveStocks();
     const activeIndicators = Array.from(state.selectedIndicators);
@@ -1835,36 +1866,48 @@
 
       const color = getStockColor(code);
       const bctcSeries = isQuy ? (sData.quarterly || []) : (sData.yearly || []);
-      const monthlyList = sData.monthly || [];
 
       const bctcMap = {};
       bctcSeries.forEach(item => { bctcMap[item.ky] = item; });
-
-      const monthlyMap = {};
-      monthlyList.forEach(item => { monthlyMap[item.thang] = item; });
 
       activeIndicators.forEach(k => {
         const def = ALL_INDICATOR_DEFS[k];
         if (!def) return;
 
         const rawSeries = [];
-        let lastBctcVal = null;
+        const uocTinhArr = [];
+        const dangDienRaArr = [];
+        const tinCayThapArr = [];
+        const chiCoDinhGiaArr = [];
+        const nullReasonArr = [];
 
-        filterMonths.forEach(mStr => {
-          if (def.isVal) {
-            const mItem = monthlyMap[mStr];
-            rawSeries.push(mItem ? mItem[k] : null);
-          } else {
-            const bKey = getBctcKeyForMonth(mStr);
-            if (bKey && bctcMap[bKey]) {
-              const bItem = bctcMap[bKey];
-              let v = bItem[k];
-              if (v === undefined && def.alt) v = bItem[def.alt];
-              lastBctcVal = (v !== undefined && v !== null) ? v : null;
-              rawSeries.push(lastBctcVal);
+        filterPeriods.forEach(pStr => {
+          const bItem = bctcMap[pStr];
+          if (bItem) {
+            let v = bItem[k];
+            if (v === undefined && def.alt) v = bItem[def.alt];
+            const val = (v !== undefined && v !== null) ? v : null;
+            rawSeries.push(val);
+            if (k === 'pe' || k === 'pb') {
+              uocTinhArr.push(!!bItem.uoc_tinh);
+              dangDienRaArr.push(!!bItem.dang_dien_ra);
+              tinCayThapArr.push(!!bItem.tin_cay_thap);
+              chiCoDinhGiaArr.push(!!bItem.chi_co_dinh_gia);
+              nullReasonArr.push((val === null) ? (bItem[`ly_do_null_${k}`] || null) : null);
             } else {
-              rawSeries.push(null);
+              uocTinhArr.push(false);
+              dangDienRaArr.push(false);
+              tinCayThapArr.push(false);
+              chiCoDinhGiaArr.push(false);
+              nullReasonArr.push((val === null) ? (bItem[`ly_do_null_${k}`] || null) : null);
             }
+          } else {
+            rawSeries.push(null);
+            uocTinhArr.push(false);
+            dangDienRaArr.push(false);
+            tinCayThapArr.push(false);
+            chiCoDinhGiaArr.push(false);
+            nullReasonArr.push('thieu_quy');
           }
         });
 
@@ -1912,7 +1955,7 @@
           });
         }
 
-        datasets.push({
+        const dsConfig = {
           id: dsId,
           code,
           indicatorKey: k,
@@ -1921,12 +1964,53 @@
           borderColor: color,
           backgroundColor: color,
           borderWidth: 2,
-          borderDash: def.dash,
           pointStyle: def.marker,
           pointRadius: 3,
-          spanGaps: !def.isVal,
-          yAxisID: axisId
-        });
+          spanGaps: false,
+          yAxisID: axisId,
+          uocTinh: uocTinhArr,
+          dangDienRa: dangDienRaArr,
+          tinCayThap: tinCayThapArr,
+          chiCoDinhGia: chiCoDinhGiaArr,
+          nullReasons: nullReasonArr
+        };
+
+        if (k === 'pe' || k === 'pb') {
+          dsConfig.segment = {
+            borderDash: ctx => {
+              const i0 = ctx.p0DataIndex;
+              const i1 = ctx.p1DataIndex;
+              if (uocTinhArr[i0] || uocTinhArr[i1] || dangDienRaArr[i0] || dangDienRaArr[i1] || tinCayThapArr[i0] || tinCayThapArr[i1]) {
+                return [4, 4];
+              }
+              return (def.dash && def.dash.length) ? def.dash : undefined;
+            },
+            borderColor: ctx => {
+              const i0 = ctx.p0DataIndex;
+              const i1 = ctx.p1DataIndex;
+              if (tinCayThapArr[i0] || tinCayThapArr[i1]) {
+                return hexToRgba(color, 0.4);
+              }
+              if (dangDienRaArr[i0] || dangDienRaArr[i1]) {
+                return hexToRgba(color, 0.5);
+              }
+              if (uocTinhArr[i0] || uocTinhArr[i1]) {
+                return hexToRgba(color, 0.7);
+              }
+              return color;
+            }
+          };
+          dsConfig.pointBackgroundColor = ctx => {
+            const idx = ctx.dataIndex;
+            if (dangDienRaArr[idx]) return hexToRgba(color, 0.5);
+            if (uocTinhArr[idx]) return hexToRgba(color, 0.7);
+            return color;
+          };
+        } else {
+          dsConfig.borderDash = def.dash;
+        }
+
+        datasets.push(dsConfig);
       });
     });
 
@@ -1985,11 +2069,8 @@
         const gData = await loadIndustryData(gCode);
         if (!gData) continue;
 
-        const gMonthlyMap = {};
-        (gData.monthly || []).forEach(m => { gMonthlyMap[m.thang] = m; });
-
-        const gQuarterlyMap = {};
         const gSeriesSource = isQuy ? (gData.quarterly || []) : (gData.yearly || []);
+        const gQuarterlyMap = {};
         gSeriesSource.forEach(q => { gQuarterlyMap[q.ky] = q; });
 
         activeIndicators.forEach(k => {
@@ -1999,47 +2080,34 @@
           const medSeries = [];
           const p25Series = [];
           const p75Series = [];
+          const gUocTinhArr = [];
+          const gNullReasonArr = [];
 
           let hasAnyData = false;
           let latestValidN = 0;
           let totalN = gData.so_ma || 0;
 
-          filterMonths.forEach(mStr => {
-            if (def.isVal) {
-              const m = gMonthlyMap[mStr];
-              if (m && m[k] !== null && m[k] !== undefined) {
-                medSeries.push(m[k]);
-                p25Series.push(m[`${k}_p25`]);
-                p75Series.push(m[`${k}_p75`]);
-                hasAnyData = true;
-                latestValidN = m[`${k}_n_hop_le`] || latestValidN;
-                totalN = m.n_tong || totalN;
-              } else {
-                medSeries.push(null);
-                p25Series.push(null);
-                p75Series.push(null);
-              }
+          filterPeriods.forEach(pStr => {
+            const q = gQuarterlyMap[pStr];
+            let targetK = k;
+            if (q && q[k] === undefined && def.alt && q[def.alt] !== undefined) {
+              targetK = def.alt;
+            }
+            if (q && q[targetK] !== null && q[targetK] !== undefined) {
+              medSeries.push(q[targetK]);
+              p25Series.push(q[`${targetK}_p25`]);
+              p75Series.push(q[`${targetK}_p75`]);
+              hasAnyData = true;
+              latestValidN = q[`n_hop_le_${targetK}`] || q[`${targetK}_n_hop_le`] || latestValidN;
+              const isUoc = (targetK === 'pe' || targetK === 'pb') && (pStr <= '2022Q4' || pStr <= '2022');
+              gUocTinhArr.push(isUoc);
+              gNullReasonArr.push(null);
             } else {
-              const bKey = getBctcKeyForMonth(mStr);
-              if (bKey && gQuarterlyMap[bKey]) {
-                const q = gQuarterlyMap[bKey];
-                const v = q[k];
-                if (v !== null && v !== undefined) {
-                  medSeries.push(v);
-                  p25Series.push(q[`${k}_p25`]);
-                  p75Series.push(q[`${k}_p75`]);
-                  hasAnyData = true;
-                  latestValidN = q[`n_hop_le_${k}`] || q[`${k}_n_hop_le`] || latestValidN;
-                } else {
-                  medSeries.push(null);
-                  p25Series.push(null);
-                  p75Series.push(null);
-                }
-              } else {
-                medSeries.push(null);
-                p25Series.push(null);
-                p75Series.push(null);
-              }
+              medSeries.push(null);
+              p25Series.push(null);
+              p75Series.push(null);
+              gUocTinhArr.push(false);
+              gNullReasonArr.push(q ? (q[`ly_do_null_${targetK}`] || 'it_ma') : 'it_ma');
             }
           });
 
@@ -2080,6 +2148,7 @@
               borderDash: [2, 2],
               pointRadius: 0,
               fill: false,
+              spanGaps: false,
               yAxisID: axisId
             });
 
@@ -2093,11 +2162,12 @@
               pointRadius: 0,
               fill: '-1',
               backgroundColor: INDUSTRY_FILL_COLOR,
+              spanGaps: false,
               yAxisID: axisId
             });
           }
 
-          datasets.push({
+          const indDsConfig = {
             id: dsId,
             isIndustry: true,
             groupName: gName,
@@ -2112,9 +2182,30 @@
             borderDash: [6, 4],
             pointStyle: 'circle',
             pointRadius: 2.5,
-            spanGaps: !def.isVal,
-            yAxisID: axisId
-          });
+            spanGaps: false,
+            yAxisID: axisId,
+            uocTinh: gUocTinhArr,
+            nullReasons: gNullReasonArr
+          };
+
+          if (k === 'pe' || k === 'pb') {
+            indDsConfig.segment = {
+              borderDash: ctx => {
+                const i0 = ctx.p0DataIndex;
+                const i1 = ctx.p1DataIndex;
+                if (gUocTinhArr[i0] || gUocTinhArr[i1]) return [3, 3];
+                return [6, 4];
+              },
+              borderColor: ctx => {
+                const i0 = ctx.p0DataIndex;
+                const i1 = ctx.p1DataIndex;
+                if (gUocTinhArr[i0] || gUocTinhArr[i1]) return hexToRgba(INDUSTRY_COLOR, 0.6);
+                return INDUSTRY_COLOR;
+              }
+            };
+          }
+
+          datasets.push(indDsConfig);
         });
       }
     }
@@ -2243,13 +2334,13 @@
       state.chartInstance = null;
     }
 
-    setupTimeRangeSelects(filterMonths);
+    setupTimeRangeSelects(filterPeriods);
 
     const ctx = mainCanvas.getContext('2d');
     state.chartInstance = new window.Chart(ctx, {
       type: 'line',
       data: {
-        labels: filterMonths,
+        labels: filterPeriods,
         datasets
       },
       options: {
@@ -2284,13 +2375,17 @@
                 const ds = context.dataset;
                 const idx = context.dataIndex;
                 const rawArr = rawDataStore[ds.id];
-                const rawVal = rawArr ? rawArr[idx] : context.parsed.y;
+                const rawVal = rawArr ? rawArr[idx] : null;
                 const def = ALL_INDICATOR_DEFS[ds.indicatorKey];
 
                 if (!ds.isIndustry && !getIndicatorsForCode(ds.code).includes(ds.indicatorKey)) {
                   return ` ${ds.label}: Không áp dụng (mô hình không có chỉ tiêu này)`;
                 }
-                if (rawVal === null || rawVal === undefined) return `${ds.label}: —`;
+                if (rawVal === null || rawVal === undefined) {
+                  const reasonKey = ds.nullReasons ? ds.nullReasons[idx] : null;
+                  const reasonText = reasonKey ? (NULL_REASONS[reasonKey] || reasonKey) : 'Không có dữ liệu';
+                  return ` ${ds.label}: — (${reasonText})`;
+                }
 
                 let valStr = '';
                 if (state.normalized100) {
@@ -2311,7 +2406,20 @@
                   valStr = `${formatVnNumber(rawVal, 2)} lần`;
                 }
 
-                return ` ${ds.label}: ${valStr}`;
+                let flagSuffix = '';
+                if (ds.dangDienRa && ds.dangDienRa[idx]) {
+                  flagSuffix = ' (đang diễn ra)';
+                } else if (ds.uocTinh && ds.uocTinh[idx]) {
+                  flagSuffix = ' (ước tính)';
+                }
+                if (ds.tinCayThap && ds.tinCayThap[idx]) {
+                  flagSuffix += ' (tăng vốn chưa xác minh)';
+                }
+                if (ds.chiCoDinhGia && ds.chiCoDinhGia[idx]) {
+                  flagSuffix += ' (chưa có báo cáo quý này; dùng lợi nhuận và vốn chủ trễ 1 kỳ)';
+                }
+
+                return ` ${ds.label}: ${valStr}${flagSuffix}`;
               },
               afterLabel: (context) => {
                 const ds = context.dataset;
@@ -2348,6 +2456,42 @@
     });
 
     updateTimeSelects(state.chartInstance);
+
+    // Cập nhật ghi chú công thức P/E, P/B dưới biểu đồ
+    const footnoteEl = document.getElementById('stkChartFootnote');
+    if (footnoteEl) {
+      const hasPE = activeIndicators.includes('pe');
+      const hasPB = activeIndicators.includes('pb');
+      if (hasPE || hasPB) {
+        footnoteEl.hidden = false;
+        footnoteEl.textContent = '';
+        const iconSpan = document.createElement('span');
+        iconSpan.className = 'stock-footnote-icon';
+        iconSpan.textContent = 'ℹ️';
+        footnoteEl.appendChild(iconSpan);
+
+        let noteText = '';
+        if (isQuy) {
+          const parts = [];
+          if (hasPE) parts.push('P/E quý = Vốn hóa bình quân quý ÷ LNST mẹ của 4 quý liên tiếp (TTM) kết thúc ở quý trước (trễ 1 quý).');
+          if (hasPB) parts.push('P/B quý = Vốn hóa bình quân quý ÷ VCSH mẹ cuối quý trước.');
+          parts.push('Các kỳ trước 2023 là ước tính (đường nét đứt) dựa trên vốn góp và số cổ phiếu.');
+          noteText = parts.join(' ');
+        } else {
+          const parts = [];
+          if (hasPE) parts.push('P/E năm = Vốn hóa bình quân năm ÷ LNST mẹ cả năm trước (trễ 1 năm).');
+          if (hasPB) parts.push('P/B năm = Vốn hóa bình quân năm ÷ VCSH mẹ cuối năm trước.');
+          parts.push('Các kỳ trước 2023 là ước tính (đường nét đứt) dựa trên vốn góp và số cổ phiếu.');
+          noteText = parts.join(' ');
+        }
+        const textSpan = document.createElement('span');
+        textSpan.textContent = ` Ghi chú: ${noteText}`;
+        footnoteEl.appendChild(textSpan);
+      } else {
+        footnoteEl.hidden = true;
+        footnoteEl.textContent = '';
+      }
+    }
   }
 
   // ==========================================================================
