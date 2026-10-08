@@ -434,6 +434,21 @@ function setMd(el, s, emptyText){
   el.innerHTML = s ? md(s) : '<p class="empty">' + esc(emptyText || 'Chưa có nội dung.') + '</p>';
   linkify(el);
 }
+function tachTomTatDanhGia(x){
+  if (!x || typeof x !== 'object') return;
+  const raw = String(x.tom_tat || '');
+  const m = /===([A-Za-z0-9_]+)===/.exec(raw);
+  if (m){
+    x.tom_tat = raw.slice(0, m.index).trim();
+    const tail = raw.slice(m.index + m[0].length).trim();
+    if (!x.danh_gia || !String(x.danh_gia).trim()){
+      x.danh_gia = tail;
+    }
+  }
+  if (x.danh_gia){
+    x.danh_gia = String(x.danh_gia).replace(/^===([A-Za-z0-9_]+)===\s*/, '').trim();
+  }
+}
 function viDate(d){
   if (!d) return '';
   const t = new Date(d + 'T12:00:00');
@@ -560,6 +575,8 @@ async function load(date){
 }
 
 function render(d){
+  if (d.ck) tachTomTatDanhGia(d.ck);
+  if (d.mb) tachTomTatDanhGia(d.mb);
   renderKhoi('CK', d.ck || {}, d.chi_so || []);
   renderKhoi('MB', d.mb || {}, d.chi_so || []);
   renderComments(d.nhan_xet || []);
@@ -590,6 +607,7 @@ function indicatorsHtml(rows){
 }
 
 function renderKhoi(k, x, chiSo){
+  tachTomTatDanhGia(x);
   const sec = $('sec' + k);
   const tin = (x.tin || []).slice().sort((a,b) => a.thu_tu - b.thu_tu);
   const groups = [];
@@ -597,8 +615,8 @@ function renderKhoi(k, x, chiSo){
   $('cnt' + k).textContent = tin.length ? tin.length + ' tin' : '';
   state.nNews[k] = tin.length;
   sec.innerHTML =
-    '<div class="sumrow"><div class="card"><p class="k-label">Tóm tắt nhánh</p><div class="md" data-f="tt"></div></div>' +
-    '<div class="card dg"><p class="k-label">Đánh giá nhánh</p><div class="md" data-f="dg"></div></div></div>' +
+    '<div class="sumrow"><div class="card"><p class="k-label">Tóm tắt nhanh</p><div class="md" data-f="tt"></div></div>' +
+    '<div class="card dg"><p class="k-label">Đánh giá nhanh</p><div class="md" data-f="dg"></div></div></div>' +
     '<div class="blk anchor" id="target-report-' + k + '"><div class="blk-head"><div class="ttl"><h2>Báo cáo chi tiết</h2><p class="sub">Đọc lướt các câu luận điểm · bấm vào mục để xem giải thích và nguồn</p></div>' +
       '<div class="tool">' + (x.link_doc ? '<a class="chip-btn" href="' + esc(x.link_doc) + '" target="_blank" rel="noopener">Google Docs ↗</a>' : '') +
       (x.bao_cao_md ? '<button class="chip-btn toggle-all" type="button" data-scope="rep' + k + '">Mở tất cả</button>' : '') + '</div></div>' +
@@ -864,6 +882,7 @@ function head(id, title, sub, tool){
   return '<div class="blk anchor" id="' + id + '"><div class="blk-head"><div class="ttl"><h2>' + esc(title) + '</h2>' + (sub ? '<p class="sub">' + sub + '</p>' : '') + '</div>' + (tool ? '<div class="tool">' + tool + '</div>' : '') + '</div>';
 }
 function conHtml(c){
+  if (c) tachTomTatDanhGia(c);
   const L = loaiKy(c.ky), th = firstThesis(c.danh_gia);
   const ten = { TUAN: 'tuần', THANG: 'tháng', QUY: 'quý' }[L] || 'kỳ';
   const meta = (c.so_ngay || 0) + ' ngày có bản tin · ' + (c.so_tin || 0) + ' tin' + (c.co_bc ? ' · có báo cáo ' + ten : '');
@@ -920,6 +939,7 @@ function renderKy(d){
 }
 function renderKyKhoi(k, x, d){
   const L = d.loai, sec = $('sec' + k), bc = x.bao_cao;
+  if (bc) tachTomTatDanhGia(bc);
   state.nNews[k] = x.tong_tin || 0;
   $('cnt' + k).textContent = x.tong_tin ? x.tong_tin + ' tin' : '';
   let h = '';
