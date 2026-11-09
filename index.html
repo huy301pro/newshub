@@ -430,7 +430,64 @@ function md(s){
 function linkify(root){
   root.querySelectorAll('a[href]').forEach(a => { a.target = '_blank'; a.rel = 'noopener'; if (a.classList.contains('cite')) a.title = a.href; });
 }
+function autoBold(kind, s){
+  if (!s || typeof s !== 'string') return s;
+  if (kind === 'tt'){
+    return s.split('\n').map(line => {
+      if (line.includes('**')) return line;
+      const m = /^(\s*[-*•]\s+)([^:\n]+):(\s*.*)$/.exec(line);
+      if (m){
+        const x = m[2].trim();
+        if (x.length >= 2 && x.length <= 80 && !/https?:/i.test(x)){
+          return m[1] + '**' + x + '**:' + m[3];
+        }
+      }
+      return line;
+    }).join('\n');
+  }
+  if (kind === 'dg'){
+    if (s.includes('**')) return s;
+    const m = /^([\s\S]*?(?:(?<!\d)[.!?](?!\d)))([\s\S]*)$/.exec(s);
+    if (m){
+      const sep = m[2].startsWith('\n') ? '\n\n' : ' ';
+      return '**' + m[1].trim() + '**' + (m[2].trim() ? sep + m[2].trim() : '');
+    }
+    return s;
+  }
+  if (kind === 'bc'){
+    const lines = s.split('\n');
+    const out = [];
+    for (let i = 0; i < lines.length; i++){
+      const l = lines[i];
+      const trimmed = l.trim();
+      if (!l.includes('**') && !/^\s*[-*•]\s/.test(l) && !/^\s*#{1,4}\s/.test(l) && trimmed.length > 25){
+        let nextIsBullet = false;
+        for (let j = i + 1; j < lines.length; j++){
+          const nextTrimmed = lines[j].trim();
+          if (!nextTrimmed) continue;
+          if (/^\s*[-*•]\s/.test(lines[j])) nextIsBullet = true;
+          break;
+        }
+        let prevIsHeadOrBlank = (i === 0 || !lines[i-1].trim() || /^\s*#{1,4}\s/.test(lines[i-1]));
+        if (prevIsHeadOrBlank && nextIsBullet){
+          const citeMatch = /((?:\s*\[\(\d+\)\]\([^)]*\))+[\s.]*)$/.exec(trimmed);
+          if (citeMatch){
+            const core = trimmed.slice(0, trimmed.length - citeMatch[0].length).trim();
+            out.push('**' + core + '** ' + citeMatch[0].trim());
+          } else {
+            out.push('**' + trimmed + '**');
+          }
+          continue;
+        }
+      }
+      out.push(l);
+    }
+    return out.join('\n');
+  }
+  return s;
+}
 function setMd(el, s, emptyText){
+  if (el && el.dataset && el.dataset.f) s = autoBold(el.dataset.f, s);
   el.innerHTML = s ? md(s) : '<p class="empty">' + esc(emptyText || 'Chưa có nội dung.') + '</p>';
   linkify(el);
 }
@@ -644,8 +701,16 @@ const CITE_RE = /\[\(\d+\)\]\([^)]*\)/g;
 function thesisOf(line){
   if (/^\s*[-*•]\s/.test(line)) return '';
   const m = /^\s*\*\*(.+?)\*\*\s*([.:]?)\s*(.*)$/.exec(line);
-  if (!m || m[3].replace(CITE_RE, '').trim().length > 4) return '';
-  return (m[1].replace(/^Luận điểm\s*\d*\s*:\s*/i, '') + m[2]).replace(CITE_RE, '').trim();
+  if (m && m[3].replace(CITE_RE, '').trim().length <= 4){
+    return (m[1].replace(/^Luận điểm\s*\d*\s*:\s*/i, '') + m[2]).replace(CITE_RE, '').trim();
+  }
+  if (!/^\s*#{1,4}\s/.test(line)){
+    const clean = line.replace(CITE_RE, '').replace(/\s+\./g, '.').trim();
+    if (clean.length > 25 && !clean.startsWith('**')){
+      return clean.replace(/^Luận điểm\s*\d*\s*:\s*/i, '').trim();
+    }
+  }
+  return '';
 }
 function secHtml(title, body){
   const theses = body.map(thesisOf).filter(Boolean);
@@ -655,6 +720,7 @@ function secHtml(title, body){
     '</summary><div class="md">' + md(body.join('\n')) + '</div></details>';
 }
 function reportHtml(src){
+  src = autoBold('bc', src);
   const lines = String(src || '').replace(/\r/g, '').split('\n');
   const heads = [];
   lines.forEach((l, i) => { const h = /^(#{1,4})\s+(.*)$/.exec(l); if (h) heads.push({ i, lv: h[1].length, t: h[2].replace(/\*\*/g, '').trim() }); });
